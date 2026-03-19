@@ -12,20 +12,36 @@ export function useActor() {
   const actorQuery = useQuery<backendInterface>({
     queryKey: [ACTOR_QUERY_KEY, identity?.getPrincipal().toString()],
     queryFn: async () => {
-      const actorOptions = identity
-        ? { agentOptions: { identity } }
-        : undefined;
+      const isAuthenticated = !!identity;
+
+      if (!isAuthenticated) {
+        // Return anonymous actor; try to initialize Caffeine access control if token available
+        const actor = await createActorWithConfig();
+        const caffeineToken = getSecretParameter("caffeineAdminToken");
+        try {
+          await actor._initializeAccessControlWithSecret(caffeineToken || "");
+        } catch {
+          // init not needed or failed - continue with actor as-is
+        }
+        return actor;
+      }
+
+      const actorOptions = {
+        agentOptions: {
+          identity,
+        },
+      };
 
       const actor = await createActorWithConfig(actorOptions);
-      // Always initialize admin access control with the secret token when available.
-      // This is required because Internet Identity is not used in this app;
-      // the admin panel is protected by a 4-digit code on the frontend instead.
       const adminToken = getSecretParameter("caffeineAdminToken") || "";
-      if (adminToken) {
+      try {
         await actor._initializeAccessControlWithSecret(adminToken);
+      } catch {
+        // init not needed or failed - continue with actor as-is
       }
       return actor;
     },
+    // Only refetch when identity changes
     staleTime: Number.POSITIVE_INFINITY,
     enabled: true,
   });

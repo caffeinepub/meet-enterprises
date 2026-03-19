@@ -20,6 +20,7 @@ import { HomePage } from "./pages/HomePage";
 import { SchemesPage } from "./pages/SchemesPage";
 import { ShopPage } from "./pages/ShopPage";
 import { SupportFAQPage } from "./pages/SupportFAQPage";
+import { loadSavedTheme } from "./utils/themes";
 
 function ScrollToTop() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -105,6 +106,9 @@ declare module "@tanstack/react-router" {
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
+  useEffect(() => {
+    loadSavedTheme();
+  }, []);
 
   useEffect(() => {
     const t = setTimeout(() => setShowSplash(false), 2500);

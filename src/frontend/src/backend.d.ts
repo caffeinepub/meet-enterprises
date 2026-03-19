@@ -71,9 +71,11 @@ export enum UserRole {
 }
 export interface backendInterface {
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    createCategory(name: string): Promise<Category>;
-    createOrder(items: Array<OrderItem>, paymentMethod: string, deliveryLocation: string): Promise<Order>;
-    createProduct(productInfo: {
+    // Admin functions (require adminToken)
+    createCategory(adminToken: string, name: string): Promise<Category>;
+    updateCategory(adminToken: string, id: bigint, name: string): Promise<Category>;
+    deleteCategory(adminToken: string, id: bigint): Promise<void>;
+    createProduct(adminToken: string, productInfo: {
         mrp: bigint;
         categoryId: bigint;
         inStock: boolean;
@@ -85,13 +87,27 @@ export interface backendInterface {
         image: Uint8Array;
         colours: Array<string>;
     }): Promise<Product>;
-    createScheme(title: string, description: string, couponCode: string): Promise<Scheme>;
-    deleteCategory(id: bigint): Promise<void>;
-    deleteProduct(id: bigint): Promise<void>;
-    deleteScheme(id: bigint): Promise<void>;
-    getAllOrders(): Promise<Array<Order>>;
-    getAllUsers(): Promise<Array<UserProfile>>;
-    getAllVouchers(): Promise<Array<Voucher>>;
+    updateProduct(adminToken: string, id: bigint, productInfo: {
+        mrp: bigint;
+        categoryId: bigint;
+        inStock: boolean;
+        imageType: string;
+        discountAmount: bigint;
+        name: string;
+        description: string;
+        sizes: Array<string>;
+        image: Uint8Array;
+        colours: Array<string>;
+    }): Promise<Product>;
+    deleteProduct(adminToken: string, id: bigint): Promise<void>;
+    createScheme(adminToken: string, title: string, description: string, couponCode: string): Promise<Scheme>;
+    deleteScheme(adminToken: string, id: bigint): Promise<void>;
+    getAllOrders(adminToken: string): Promise<Array<Order>>;
+    getAllUsers(adminToken: string): Promise<Array<UserProfile>>;
+    getAllVouchers(adminToken: string): Promise<Array<Voucher>>;
+    updateOrderStatus(adminToken: string, orderId: string, status: string): Promise<void>;
+    setPaymentSettings(adminToken: string, upiId: string, qrImage: Uint8Array, qrImageType: string): Promise<void>;
+    // Public / user functions (no admin token)
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getCategories(): Promise<Array<Category>>;
@@ -105,19 +121,5 @@ export interface backendInterface {
     getUserVouchers(userId: Principal): Promise<Array<Voucher>>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(name: string, whatsapp: string): Promise<void>;
-    setPaymentSettings(upiId: string, qrImage: Uint8Array, qrImageType: string): Promise<void>;
-    updateCategory(id: bigint, name: string): Promise<Category>;
-    updateOrderStatus(orderId: string, status: string): Promise<void>;
-    updateProduct(id: bigint, productInfo: {
-        mrp: bigint;
-        categoryId: bigint;
-        inStock: boolean;
-        imageType: string;
-        discountAmount: bigint;
-        name: string;
-        description: string;
-        sizes: Array<string>;
-        image: Uint8Array;
-        colours: Array<string>;
-    }): Promise<Product>;
+    createOrder(items: Array<OrderItem>, paymentMethod: string, deliveryLocation: string): Promise<Order>;
 }

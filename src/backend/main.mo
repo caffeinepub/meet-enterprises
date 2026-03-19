@@ -19,6 +19,13 @@ actor {
   include MixinAuthorization(accessControlState);
   include MixinStorage();
 
+  // Admin is verified by a secret code token instead of principal
+  let ADMIN_CODE : Text = "2537";
+
+  func isValidAdmin(token : Text) : Bool {
+    token == ADMIN_CODE
+  };
+
   public type UserProfile = {
     id : Principal;
     name : Text;
@@ -121,32 +128,42 @@ actor {
   var nextSchemeId = 1;
   var paymentSettings : ?PaymentSettings = null;
 
-  public query ({ caller }) func getCategories() : async [Category] {
+  // ── Public read endpoints (no auth needed) ──────────────────────────────
+
+  public query func getCategories() : async [Category] {
     categories.values().toArray();
   };
 
-  public query ({ caller }) func getProducts() : async [Product] {
+  public query func getProducts() : async [Product] {
     products.values().toArray();
   };
 
-  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can view profiles");
+  public query func getProductById(id : Nat) : async Product {
+    switch (products.get(id)) {
+      case (null) { Runtime.trap("Product not found") };
+      case (?product) { product };
     };
+  };
+
+  public query func getSchemes() : async [Scheme] {
+    schemes.values().toArray().sort(compareSchemeByCreatedAt);
+  };
+
+  public query func getPaymentSettings() : async ?PaymentSettings {
+    paymentSettings;
+  };
+
+  // ── User profile (caller-based, works for any principal) ────────────────
+
+  public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     userProfiles.get(caller);
   };
 
   public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
-    if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Can only view your own profile");
-    };
     userProfiles.get(user);
   };
 
   public shared ({ caller }) func saveCallerUserProfile(name : Text, whatsapp : Text) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can save profiles");
-    };
     let userProfile : UserProfile = {
       id = caller;
       name;
@@ -155,9 +172,74 @@ actor {
     userProfiles.add(caller, userProfile);
   };
 
-  public shared ({ caller }) func createCategory(name : Text) : async Category {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can create a category");
+  // ── Orders (caller-based) ───────────────────────────────────────────────
+
+  public shared ({ caller }) func createOrder(items : [OrderItem], paymentMethod : Text, deliveryLocation : Text) : async Order {
+    let totalAmount = items.foldLeft(0, func(acc, item) { acc + (item.price * item.quantity) });
+    let orderId = "order-" # Time.now().toText();
+
+    let order : Order = {
+      id = orderId;
+      userId = caller;
+      items;
+      totalAmount;
+      paymentMethod;
+      status = "Pending";
+      createdAt = Time.now();
+      deliveryLocation;
+    };
+
+    orders.add(orderId, order);
+
+    if (totalAmount >= 1500) {
+      let voucher : Voucher = {
+        id = nextVoucherId;
+        userId = caller;
+        orderId;
+        code = "VOUCHER-" # orderId;
+        value = 100;
+        createdAt = Time.now();
+      };
+      vouchers.add(nextVoucherId, voucher);
+      nextVoucherId += 1;
+    };
+
+    order;
+  };
+
+  public query ({ caller }) func getUserOrders(userId : Principal) : async [Order] {
+    let userOrders = List.empty<Order>();
+    orders.forEach(
+      func(_id, order) {
+        if (order.userId == userId) {
+          userOrders.add(order);
+        };
+      }
+    );
+    userOrders.toArray().sort(compareOrderByCreatedAt);
+  };
+
+  public query ({ caller }) func getUserVouchers(userId : Principal) : async [Voucher] {
+    let userVouchers = List.empty<Voucher>();
+    vouchers.forEach(
+      func(_id, voucher) {
+        if (voucher.userId == userId) {
+          userVouchers.add(voucher);
+        };
+      }
+    );
+    userVouchers.toArray().sort(compareVoucherByCreatedAt);
+  };
+
+  public query ({ caller }) func getOrderById(orderId : Text) : async ?Order {
+    orders.get(orderId);
+  };
+
+  // ── Admin endpoints (token-based auth) ─────────────────────────────────
+
+  public shared func createCategory(adminToken : Text, name : Text) : async Category {
+    if (not isValidAdmin(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin code");
     };
     let category : Category = { id = nextCategoryId; name };
     categories.add(nextCategoryId, category);
@@ -165,9 +247,9 @@ actor {
     category;
   };
 
-  public shared ({ caller }) func updateCategory(id : Nat, name : Text) : async Category {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can update a category");
+  public shared func updateCategory(adminToken : Text, id : Nat, name : Text) : async Category {
+    if (not isValidAdmin(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin code");
     };
     switch (categories.get(id)) {
       case (null) { Runtime.trap("Category not found") };
@@ -179,9 +261,9 @@ actor {
     };
   };
 
-  public shared ({ caller }) func deleteCategory(id : Nat) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can delete category");
+  public shared func deleteCategory(adminToken : Text, id : Nat) : async () {
+    if (not isValidAdmin(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin code");
     };
     if (not categories.containsKey(id)) {
       Runtime.trap("Category not found");
@@ -189,7 +271,7 @@ actor {
     categories.remove(id);
   };
 
-  public shared ({ caller }) func createProduct(productInfo : {
+  public shared func createProduct(adminToken : Text, productInfo : {
     name : Text;
     description : Text;
     mrp : Nat;
@@ -201,8 +283,8 @@ actor {
     imageType : Text;
     inStock : Bool;
   }) : async Product {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can create products");
+    if (not isValidAdmin(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin code");
     };
     let product : Product = {
       id = nextProductId;
@@ -222,7 +304,7 @@ actor {
     product;
   };
 
-  public shared ({ caller }) func updateProduct(id : Nat, productInfo : {
+  public shared func updateProduct(adminToken : Text, id : Nat, productInfo : {
     name : Text;
     description : Text;
     mrp : Nat;
@@ -234,8 +316,8 @@ actor {
     imageType : Text;
     inStock : Bool;
   }) : async Product {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can update products");
+    if (not isValidAdmin(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin code");
     };
     switch (products.get(id)) {
       case (null) { Runtime.trap("Product not found") };
@@ -259,9 +341,9 @@ actor {
     };
   };
 
-  public shared ({ caller }) func deleteProduct(id : Nat) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can delete product");
+  public shared func deleteProduct(adminToken : Text, id : Nat) : async () {
+    if (not isValidAdmin(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin code");
     };
     if (not products.containsKey(id)) {
       Runtime.trap("Product not found");
@@ -269,53 +351,9 @@ actor {
     products.remove(id);
   };
 
-  public query ({ caller }) func getProductById(id : Nat) : async Product {
-    switch (products.get(id)) {
-      case (null) { Runtime.trap("Product not found") };
-      case (?product) { product };
-    };
-  };
-
-  public shared ({ caller }) func createOrder(items : [OrderItem], paymentMethod : Text, deliveryLocation : Text) : async Order {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only users can create orders");
-    };
-
-    let totalAmount = items.foldLeft(0, func(acc, item) { acc + (item.price * item.quantity) });
-    let orderId = "order-" # Time.now().toText();
-
-    let order : Order = {
-      id = orderId;
-      userId = caller;
-      items;
-      totalAmount;
-      paymentMethod;
-      status = "pending";
-      createdAt = Time.now();
-      deliveryLocation;
-    };
-
-    orders.add(orderId, order);
-
-    if (totalAmount >= 1500) {
-      let voucher : Voucher = {
-        id = nextVoucherId;
-        userId = caller;
-        orderId;
-        code = "VOUCHER-" # orderId;
-        value = 100;
-        createdAt = Time.now();
-      };
-      vouchers.add(nextVoucherId, voucher);
-      nextVoucherId += 1;
-    };
-
-    order;
-  };
-
-  public shared ({ caller }) func updateOrderStatus(orderId : Text, status : Text) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can update order status");
+  public shared func updateOrderStatus(adminToken : Text, orderId : Text, status : Text) : async () {
+    if (not isValidAdmin(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin code");
     };
     switch (orders.get(orderId)) {
       case (null) { Runtime.trap("Order not found") };
@@ -326,87 +364,37 @@ actor {
     };
   };
 
-  public shared ({ caller }) func setPaymentSettings(upiId : Text, qrImage : Blob, qrImageType : Text) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can set payment settings");
+  public shared func setPaymentSettings(adminToken : Text, upiId : Text, qrImage : Blob, qrImageType : Text) : async () {
+    if (not isValidAdmin(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin code");
     };
     paymentSettings := ?{ upiId; qrImage; qrImageType };
   };
 
-  public query ({ caller }) func getOrderById(orderId : Text) : async ?Order {
-    switch (orders.get(orderId)) {
-      case (null) { null };
-      case (?order) {
-        if (order.userId != caller and not AccessControl.isAdmin(accessControlState, caller)) {
-          Runtime.trap("Unauthorized: Can only view your own orders");
-        };
-        ?order;
-      };
-    };
-  };
-
-  public query ({ caller }) func getUserOrders(userId : Principal) : async [Order] {
-    if (caller != userId and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Can only view your own orders");
-    };
-    let userOrders = List.empty<Order>();
-    orders.forEach(
-      func(_id, order) {
-        if (order.userId == userId) {
-          userOrders.add(order);
-        };
-      }
-    );
-    userOrders.toArray().sort(compareOrderByCreatedAt);
-  };
-
-  public query ({ caller }) func getUserVouchers(userId : Principal) : async [Voucher] {
-    if (caller != userId and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Can only view your own vouchers");
-    };
-    let userVouchers = List.empty<Voucher>();
-    vouchers.forEach(
-      func(_id, voucher) {
-        if (voucher.userId == userId) {
-          userVouchers.add(voucher);
-        };
-      }
-    );
-    userVouchers.toArray().sort(compareVoucherByCreatedAt);
-  };
-
-  public query ({ caller }) func getPaymentSettings() : async ?PaymentSettings {
-    paymentSettings;
-  };
-
-  public query ({ caller }) func getAllUsers() : async [UserProfile] {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can view all users");
+  public shared func getAllUsers(adminToken : Text) : async [UserProfile] {
+    if (not isValidAdmin(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin code");
     };
     userProfiles.values().toArray();
   };
 
-  public query ({ caller }) func getAllOrders() : async [Order] {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can view all orders");
+  public shared func getAllOrders(adminToken : Text) : async [Order] {
+    if (not isValidAdmin(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin code");
     };
     orders.values().toArray().sort(compareOrderByCreatedAt);
   };
 
-  public query ({ caller }) func getAllVouchers() : async [Voucher] {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can view all vouchers");
+  public shared func getAllVouchers(adminToken : Text) : async [Voucher] {
+    if (not isValidAdmin(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin code");
     };
     vouchers.values().toArray().sort(compareVoucherByCreatedAt);
   };
 
-  public query ({ caller }) func getSchemes() : async [Scheme] {
-    schemes.values().toArray().sort(compareSchemeByCreatedAt);
-  };
-
-  public shared ({ caller }) func createScheme(title : Text, description : Text, couponCode : Text) : async Scheme {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can create schemes");
+  public shared func createScheme(adminToken : Text, title : Text, description : Text, couponCode : Text) : async Scheme {
+    if (not isValidAdmin(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin code");
     };
     let scheme : Scheme = {
       id = nextSchemeId;
@@ -420,9 +408,9 @@ actor {
     scheme;
   };
 
-  public shared ({ caller }) func deleteScheme(id : Nat) : async () {
-    if (not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Only admins can delete schemes");
+  public shared func deleteScheme(adminToken : Text, id : Nat) : async () {
+    if (not isValidAdmin(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin code");
     };
     if (not schemes.containsKey(id)) {
       Runtime.trap("Scheme not found");

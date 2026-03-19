@@ -43,6 +43,8 @@ export function CheckoutPage() {
   const { refetch: refetchVouchers } = useUserVouchers();
 
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "GPay">("COD");
+  const [upiAmountDialog, setUpiAmountDialog] = useState(false);
+  const [upiEnteredAmount, setUpiEnteredAmount] = useState(0);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [newVoucher, setNewVoucher] = useState<{
     code: string;
@@ -184,184 +186,233 @@ export function CheckoutPage() {
   const activeUpiId = paymentSettings?.upiId || FALLBACK_UPI_ID;
 
   return (
-    <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 className="font-serif text-4xl text-gold uppercase tracking-widest mb-2">
-          Checkout
-        </h1>
-        <div className="w-16 h-px bg-gold mb-10" />
+    <>
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <h1 className="font-serif text-4xl text-gold uppercase tracking-widest mb-2">
+            Checkout
+          </h1>
+          <div className="w-16 h-px bg-gold mb-10" />
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Order Summary */}
-          <div>
-            <h2 className="font-serif text-xl text-gold uppercase tracking-widest mb-6">
-              Order Summary
-            </h2>
-            <div className="flex flex-col gap-3">
-              {items.map((item, idx) => {
-                const salePrice =
-                  Number(item.product.mrp) -
-                  Number(item.product.discountAmount);
-                return (
-                  <div
-                    key={item.product.id.toString()}
-                    className="flex justify-between text-sm py-2 border-b border-gold-border"
-                    data-ocid={`checkout.item.${idx + 1}`}
-                  >
-                    <span className="text-muted-foreground">
-                      {item.product.name}
-                      {item.selectedSize ? ` (${item.selectedSize})` : ""}
-                      {item.selectedColour ? ` — ${item.selectedColour}` : ""} ×{" "}
-                      {item.quantity}
-                    </span>
-                    <span>{formatPrice(salePrice * item.quantity)}</span>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex justify-between font-semibold text-lg mt-4">
-              <span>Total</span>
-              <span className="text-gold">{formatPrice(totalAmount)}</span>
-            </div>
-            {totalAmount >= 1500 && (
-              <div className="mt-4 p-3 border border-gold-border bg-card">
-                <p className="text-xs text-gold flex items-center gap-2">
-                  <Gift className="w-3.5 h-3.5" />
-                  You qualify for an exclusive voucher reward!
-                </p>
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Order Summary */}
+            <div>
+              <h2 className="font-serif text-xl text-gold uppercase tracking-widest mb-6">
+                Order Summary
+              </h2>
+              <div className="flex flex-col gap-3">
+                {items.map((item, idx) => {
+                  const salePrice =
+                    Number(item.product.mrp) -
+                    Number(item.product.discountAmount);
+                  return (
+                    <div
+                      key={item.product.id.toString()}
+                      className="flex justify-between text-sm py-2 border-b border-gold-border"
+                      data-ocid={`checkout.item.${idx + 1}`}
+                    >
+                      <span className="text-muted-foreground">
+                        {item.product.name}
+                        {item.selectedSize ? ` (${item.selectedSize})` : ""}
+                        {item.selectedColour ? ` — ${item.selectedColour}` : ""}{" "}
+                        × {item.quantity}
+                      </span>
+                      <span>{formatPrice(salePrice * item.quantity)}</span>
+                    </div>
+                  );
+                })}
               </div>
-            )}
-
-            {/* Delivery Location */}
-            <div className="mt-6">
-              <label
-                htmlFor="delivery-location"
-                className="text-xs tracking-widest uppercase text-muted-foreground flex items-center gap-2 mb-2"
-              >
-                <MapPin className="w-3.5 h-3.5 text-gold" /> Delivery Location
-              </label>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder={
-                  locLoading
-                    ? "Detecting location..."
-                    : "Enter your address or coordinates"
-                }
-                className="w-full bg-secondary border border-gold-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-gold"
-                id="delivery-location"
-                data-ocid="checkout.location.input"
-              />
-              {!location && !locLoading && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Location not detected — please type your address above.
-                </p>
+              <div className="flex justify-between font-semibold text-lg mt-4">
+                <span>Total</span>
+                <span className="text-gold">{formatPrice(totalAmount)}</span>
+              </div>
+              {totalAmount >= 1500 && (
+                <div className="mt-4 p-3 border border-gold-border bg-card">
+                  <p className="text-xs text-gold flex items-center gap-2">
+                    <Gift className="w-3.5 h-3.5" />
+                    You qualify for an exclusive voucher reward!
+                  </p>
+                </div>
               )}
+
+              {/* Delivery Location */}
+              <div className="mt-6">
+                <label
+                  htmlFor="delivery-location"
+                  className="text-xs tracking-widest uppercase text-muted-foreground flex items-center gap-2 mb-2"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-gold" /> Delivery Location
+                </label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder={
+                    locLoading
+                      ? "Detecting location..."
+                      : "Enter your address or coordinates"
+                  }
+                  className="w-full bg-secondary border border-gold-border px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-gold"
+                  id="delivery-location"
+                  data-ocid="checkout.location.input"
+                />
+                {!location && !locLoading && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Location not detected — please type your address above.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Payment */}
+            <div>
+              <h2 className="font-serif text-xl text-gold uppercase tracking-widest mb-6">
+                Payment Method
+              </h2>
+              <div className="flex flex-col gap-3 mb-8">
+                {(["COD", "GPay"] as const).map((method) => (
+                  <label
+                    key={method}
+                    className={`flex items-center gap-4 p-4 card-luxury cursor-pointer transition-all ${
+                      paymentMethod === method
+                        ? "border-gold"
+                        : "hover:border-gold/50"
+                    }`}
+                    data-ocid={`checkout.payment_${method.toLowerCase()}.radio`}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value={method}
+                      checked={paymentMethod === method}
+                      onChange={() => setPaymentMethod(method)}
+                      className="accent-gold"
+                    />
+                    <div className="flex items-center gap-3">
+                      {method === "COD" ? (
+                        <Package className="w-5 h-5 text-gold" />
+                      ) : (
+                        <Smartphone className="w-5 h-5 text-gold" />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">
+                          {method === "COD" ? "Cash on Delivery" : "GPay (UPI)"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {method === "COD"
+                            ? "Pay when delivered"
+                            : "Instant UPI payment"}
+                        </p>
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              {paymentMethod === "GPay" && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="card-luxury p-6 mb-6"
+                  data-ocid="checkout.gpay.panel"
+                >
+                  {settingsLoading ? (
+                    <Skeleton className="h-48 w-48 mx-auto" />
+                  ) : (
+                    <div className="flex flex-col items-center gap-4">
+                      <p className="text-xs tracking-widest uppercase text-muted-foreground">
+                        Scan to Pay
+                      </p>
+                      <img
+                        src={qrSrc}
+                        alt="GPay QR Code"
+                        className="w-56 h-56 object-contain rounded"
+                      />
+                      <p className="text-xs text-muted-foreground text-center">
+                        UPI ID: {activeUpiId}
+                      </p>
+                      <p className="text-xs text-muted-foreground text-center">
+                        Or tap below to open your UPI app
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUpiEnteredAmount(totalAmount);
+                          setUpiAmountDialog(true);
+                        }}
+                        className="inline-flex items-center gap-2 btn-gold px-6 py-3 text-xs tracking-widest uppercase"
+                        data-ocid="checkout.upi_pay.button"
+                      >
+                        <Smartphone className="w-4 h-4" /> Open GPay / UPI App
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              <Button
+                className="btn-gold w-full py-6 tracking-widest uppercase text-sm"
+                onClick={handlePlaceOrder}
+                disabled={createOrder.isPending}
+                data-ocid="checkout.place_order.button"
+              >
+                {createOrder.isPending ? "Placing Order..." : "Place Order"}
+              </Button>
             </div>
           </div>
+        </motion.div>
+      </main>
 
-          {/* Payment */}
-          <div>
-            <h2 className="font-serif text-xl text-gold uppercase tracking-widest mb-6">
-              Payment Method
-            </h2>
-            <div className="flex flex-col gap-3 mb-8">
-              {(["COD", "GPay"] as const).map((method) => (
-                <label
-                  key={method}
-                  className={`flex items-center gap-4 p-4 card-luxury cursor-pointer transition-all ${
-                    paymentMethod === method
-                      ? "border-gold"
-                      : "hover:border-gold/50"
-                  }`}
-                  data-ocid={`checkout.payment_${method.toLowerCase()}.radio`}
-                >
-                  <input
-                    type="radio"
-                    name="payment"
-                    value={method}
-                    checked={paymentMethod === method}
-                    onChange={() => setPaymentMethod(method)}
-                    className="accent-gold"
-                  />
-                  <div className="flex items-center gap-3">
-                    {method === "COD" ? (
-                      <Package className="w-5 h-5 text-gold" />
-                    ) : (
-                      <Smartphone className="w-5 h-5 text-gold" />
-                    )}
-                    <div>
-                      <p className="text-sm font-medium">
-                        {method === "COD" ? "Cash on Delivery" : "GPay (UPI)"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {method === "COD"
-                          ? "Pay when delivered"
-                          : "Instant UPI payment"}
-                      </p>
-                    </div>
-                  </div>
-                </label>
-              ))}
-            </div>
-
-            {paymentMethod === "GPay" && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="card-luxury p-6 mb-6"
-                data-ocid="checkout.gpay.panel"
+      {/* UPI Amount Dialog */}
+      {upiAmountDialog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          data-ocid="checkout.upi_amount.modal"
+        >
+          <div className="card-luxury p-6 w-full max-w-sm mx-4 rounded-xl space-y-4">
+            <h3 className="text-base tracking-widest uppercase text-gold">
+              Enter Payment Amount
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Confirm the amount before opening your UPI app
+            </p>
+            <input
+              type="number"
+              min={1}
+              value={upiEnteredAmount}
+              onChange={(e) => setUpiEnteredAmount(Number(e.target.value))}
+              className="w-full bg-input border border-border rounded px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              data-ocid="checkout.upi_amount.input"
+            />
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  openUpiLink(
+                    `upi://pay?pa=${activeUpiId}&pn=Meet%20Enterprises&am=${upiEnteredAmount}&cu=INR`,
+                  );
+                  setUpiAmountDialog(false);
+                }}
+                className="flex-1 btn-gold py-2 text-xs tracking-widest uppercase"
+                data-ocid="checkout.upi_amount.confirm_button"
               >
-                {settingsLoading ? (
-                  <Skeleton className="h-48 w-48 mx-auto" />
-                ) : (
-                  <div className="flex flex-col items-center gap-4">
-                    <p className="text-xs tracking-widest uppercase text-muted-foreground">
-                      Scan to Pay
-                    </p>
-                    <img
-                      src={qrSrc}
-                      alt="GPay QR Code"
-                      className="w-56 h-56 object-contain rounded"
-                    />
-                    <p className="text-xs text-muted-foreground text-center">
-                      UPI ID: {activeUpiId}
-                    </p>
-                    <p className="text-xs text-muted-foreground text-center">
-                      Or tap below to open your UPI app
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        openUpiLink(
-                          `upi://pay?pa=${activeUpiId}&pn=Meet%20Enterprises&am=${totalAmount}&cu=INR`,
-                        )
-                      }
-                      className="inline-flex items-center gap-2 btn-gold px-6 py-3 text-xs tracking-widest uppercase"
-                      data-ocid="checkout.upi_pay.button"
-                    >
-                      <Smartphone className="w-4 h-4" /> Open GPay / UPI App
-                    </button>
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            <Button
-              className="btn-gold w-full py-6 tracking-widest uppercase text-sm"
-              onClick={handlePlaceOrder}
-              disabled={createOrder.isPending}
-              data-ocid="checkout.place_order.button"
-            >
-              {createOrder.isPending ? "Placing Order..." : "Place Order"}
-            </Button>
+                Open UPI App
+              </button>
+              <button
+                type="button"
+                onClick={() => setUpiAmountDialog(false)}
+                className="flex-1 border border-border rounded py-2 text-xs tracking-widest uppercase hover:bg-secondary transition-colors"
+                data-ocid="checkout.upi_amount.cancel_button"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
-      </motion.div>
-    </main>
+      )}
+    </>
   );
 }

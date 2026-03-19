@@ -108,7 +108,7 @@ export const idlService = IDL.Service({
   '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-  'createCategory' : IDL.Func([IDL.Text], [Category], []),
+  'createCategory' : IDL.Func([IDL.Text, IDL.Text], [Category], []),
   'createOrder' : IDL.Func(
       [IDL.Vec(OrderItem), IDL.Text, IDL.Text],
       [Order],
@@ -116,6 +116,7 @@ export const idlService = IDL.Service({
     ),
   'createProduct' : IDL.Func(
       [
+        IDL.Text,
         IDL.Record({
           'mrp' : IDL.Nat,
           'categoryId' : IDL.Nat,
@@ -132,13 +133,13 @@ export const idlService = IDL.Service({
       [Product],
       [],
     ),
-  'createScheme' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [Scheme], []),
-  'deleteCategory' : IDL.Func([IDL.Nat], [], []),
-  'deleteProduct' : IDL.Func([IDL.Nat], [], []),
-  'deleteScheme' : IDL.Func([IDL.Nat], [], []),
-  'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
-  'getAllUsers' : IDL.Func([], [IDL.Vec(UserProfile)], ['query']),
-  'getAllVouchers' : IDL.Func([], [IDL.Vec(Voucher)], ['query']),
+  'createScheme' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text], [Scheme], []),
+  'deleteCategory' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+  'deleteProduct' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+  'deleteScheme' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+  'getAllOrders' : IDL.Func([IDL.Text], [IDL.Vec(Order)], []),
+  'getAllUsers' : IDL.Func([IDL.Text], [IDL.Vec(UserProfile)], []),
+  'getAllVouchers' : IDL.Func([IDL.Text], [IDL.Vec(Voucher)], []),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getCategories' : IDL.Func([], [IDL.Vec(Category)], ['query']),
@@ -157,14 +158,15 @@ export const idlService = IDL.Service({
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'setPaymentSettings' : IDL.Func(
-      [IDL.Text, IDL.Vec(IDL.Nat8), IDL.Text],
+      [IDL.Text, IDL.Text, IDL.Vec(IDL.Nat8), IDL.Text],
       [],
       [],
     ),
-  'updateCategory' : IDL.Func([IDL.Nat, IDL.Text], [Category], []),
-  'updateOrderStatus' : IDL.Func([IDL.Text, IDL.Text], [], []),
+  'updateCategory' : IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [Category], []),
+  'updateOrderStatus' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
   'updateProduct' : IDL.Func(
       [
+        IDL.Text,
         IDL.Nat,
         IDL.Record({
           'mrp' : IDL.Nat,
@@ -287,7 +289,7 @@ export const idlFactory = ({ IDL }) => {
     '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-    'createCategory' : IDL.Func([IDL.Text], [Category], []),
+    'createCategory' : IDL.Func([IDL.Text, IDL.Text], [Category], []),
     'createOrder' : IDL.Func(
         [IDL.Vec(OrderItem), IDL.Text, IDL.Text],
         [Order],
@@ -295,6 +297,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'createProduct' : IDL.Func(
         [
+          IDL.Text,
           IDL.Record({
             'mrp' : IDL.Nat,
             'categoryId' : IDL.Nat,
@@ -311,13 +314,13 @@ export const idlFactory = ({ IDL }) => {
         [Product],
         [],
       ),
-    'createScheme' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [Scheme], []),
-    'deleteCategory' : IDL.Func([IDL.Nat], [], []),
-    'deleteProduct' : IDL.Func([IDL.Nat], [], []),
-    'deleteScheme' : IDL.Func([IDL.Nat], [], []),
-    'getAllOrders' : IDL.Func([], [IDL.Vec(Order)], ['query']),
-    'getAllUsers' : IDL.Func([], [IDL.Vec(UserProfile)], ['query']),
-    'getAllVouchers' : IDL.Func([], [IDL.Vec(Voucher)], ['query']),
+    'createScheme' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text], [Scheme], []),
+    'deleteCategory' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+    'deleteProduct' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+    'deleteScheme' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+    'getAllOrders' : IDL.Func([IDL.Text], [IDL.Vec(Order)], []),
+    'getAllUsers' : IDL.Func([IDL.Text], [IDL.Vec(UserProfile)], []),
+    'getAllVouchers' : IDL.Func([IDL.Text], [IDL.Vec(Voucher)], []),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getCategories' : IDL.Func([], [IDL.Vec(Category)], ['query']),
@@ -340,14 +343,15 @@ export const idlFactory = ({ IDL }) => {
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'saveCallerUserProfile' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'setPaymentSettings' : IDL.Func(
-        [IDL.Text, IDL.Vec(IDL.Nat8), IDL.Text],
+        [IDL.Text, IDL.Text, IDL.Vec(IDL.Nat8), IDL.Text],
         [],
         [],
       ),
-    'updateCategory' : IDL.Func([IDL.Nat, IDL.Text], [Category], []),
-    'updateOrderStatus' : IDL.Func([IDL.Text, IDL.Text], [], []),
+    'updateCategory' : IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [Category], []),
+    'updateOrderStatus' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
     'updateProduct' : IDL.Func(
         [
+          IDL.Text,
           IDL.Nat,
           IDL.Record({
             'mrp' : IDL.Nat,

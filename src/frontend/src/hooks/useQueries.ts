@@ -9,7 +9,22 @@ import type {
   UserProfile,
   Voucher,
 } from "../backend.d";
+import { getAdminToken } from "../utils/adminStore";
 import { useActor } from "./useActor";
+
+function requireActor(
+  actor: unknown,
+): asserts actor is NonNullable<typeof actor> {
+  if (!actor)
+    throw new Error("Backend not connected. Please refresh the page.");
+}
+
+function requireAdminToken(): string {
+  const token = getAdminToken();
+  if (!token)
+    throw new Error("Admin session expired. Please re-enter the admin code.");
+  return token;
+}
 
 export function useCategories() {
   const { actor, isFetching } = useActor();
@@ -51,7 +66,7 @@ export function useAllUsers() {
   const { actor, isFetching } = useActor();
   return useQuery<UserProfile[]>({
     queryKey: ["allUsers"],
-    queryFn: async () => (actor ? actor.getAllUsers() : []),
+    queryFn: async () => (actor ? actor.getAllUsers(getAdminToken()) : []),
     enabled: !!actor && !isFetching,
   });
 }
@@ -60,7 +75,7 @@ export function useAllOrders() {
   const { actor, isFetching } = useActor();
   return useQuery<Order[]>({
     queryKey: ["allOrders"],
-    queryFn: async () => (actor ? actor.getAllOrders() : []),
+    queryFn: async () => (actor ? actor.getAllOrders(getAdminToken()) : []),
     enabled: !!actor && !isFetching,
   });
 }
@@ -69,7 +84,7 @@ export function useAllVouchers() {
   const { actor, isFetching } = useActor();
   return useQuery<Voucher[]>({
     queryKey: ["allVouchers"],
-    queryFn: async () => (actor ? actor.getAllVouchers() : []),
+    queryFn: async () => (actor ? actor.getAllVouchers(getAdminToken()) : []),
     enabled: !!actor && !isFetching,
   });
 }
@@ -111,7 +126,11 @@ export function useCreateCategory() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) => actor!.createCategory(name),
+    mutationFn: async (name: string) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return actor.createCategory(token, name);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
 }
@@ -120,8 +139,11 @@ export function useUpdateCategory() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, name }: { id: bigint; name: string }) =>
-      actor!.updateCategory(id, name),
+    mutationFn: async ({ id, name }: { id: bigint; name: string }) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return actor.updateCategory(token, id, name);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
 }
@@ -130,7 +152,11 @@ export function useDeleteCategory() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: bigint) => actor!.deleteCategory(id),
+    mutationFn: async (id: bigint) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return actor.deleteCategory(token, id);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
   });
 }
@@ -152,7 +178,11 @@ export function useCreateProduct() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (info: ProductInfo) => actor!.createProduct(info),
+    mutationFn: async (info: ProductInfo) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return actor.createProduct(token, info);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
   });
 }
@@ -161,8 +191,11 @@ export function useUpdateProduct() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, info }: { id: bigint; info: ProductInfo }) =>
-      actor!.updateProduct(id, info),
+    mutationFn: async ({ id, info }: { id: bigint; info: ProductInfo }) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return actor.updateProduct(token, id, info);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
   });
 }
@@ -171,7 +204,11 @@ export function useDeleteProduct() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: bigint) => actor!.deleteProduct(id),
+    mutationFn: async (id: bigint) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return actor.deleteProduct(token, id);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
   });
 }
@@ -180,8 +217,14 @@ export function useUpdateOrderStatus() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
-      actor!.updateOrderStatus(orderId, status),
+    mutationFn: async ({
+      orderId,
+      status,
+    }: { orderId: string; status: string }) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return actor.updateOrderStatus(token, orderId, status);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["allOrders"] }),
   });
 }
@@ -198,7 +241,10 @@ export function useCreateOrder() {
       items: OrderItem[];
       paymentMethod: string;
       deliveryLocation: string;
-    }) => actor!.createOrder(items, paymentMethod, deliveryLocation),
+    }) => {
+      requireActor(actor);
+      return actor.createOrder(items, paymentMethod, deliveryLocation);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["allOrders"] });
       qc.invalidateQueries({ queryKey: ["userVouchers"] });
@@ -210,8 +256,10 @@ export function useSaveProfile() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ name, whatsapp }: { name: string; whatsapp: string }) =>
-      actor!.saveCallerUserProfile(name, whatsapp),
+    mutationFn: ({ name, whatsapp }: { name: string; whatsapp: string }) => {
+      requireActor(actor);
+      return actor.saveCallerUserProfile(name, whatsapp);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["callerProfile"] }),
   });
 }
@@ -220,7 +268,7 @@ export function useSetPaymentSettings() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       upiId,
       qrImage,
       qrImageType,
@@ -228,7 +276,11 @@ export function useSetPaymentSettings() {
       upiId: string;
       qrImage: Uint8Array;
       qrImageType: string;
-    }) => actor!.setPaymentSettings(upiId, qrImage, qrImageType),
+    }) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return actor.setPaymentSettings(token, upiId, qrImage, qrImageType);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["paymentSettings"] }),
   });
 }
@@ -237,7 +289,7 @@ export function useCreateScheme() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       title,
       description,
       couponCode,
@@ -245,7 +297,11 @@ export function useCreateScheme() {
       title: string;
       description: string;
       couponCode: string;
-    }) => actor!.createScheme(title, description, couponCode),
+    }) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return actor.createScheme(token, title, description, couponCode);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["schemes"] }),
   });
 }
@@ -254,7 +310,11 @@ export function useDeleteScheme() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: bigint) => actor!.deleteScheme(id),
+    mutationFn: async (id: bigint) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return actor.deleteScheme(token, id);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["schemes"] }),
   });
 }

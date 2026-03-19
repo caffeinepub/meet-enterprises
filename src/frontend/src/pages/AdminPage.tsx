@@ -34,6 +34,7 @@ import {
   Edit2,
   Gift,
   Package,
+  Palette,
   Plus,
   Settings,
   ShoppingBag,
@@ -63,11 +64,13 @@ import {
   useUpdateOrderStatus,
   useUpdateProduct,
 } from "../hooks/useQueries";
+import { setAdminToken } from "../utils/adminStore";
 import {
   fileToUint8Array,
   formatPrice,
   uint8ToDataUrl,
 } from "../utils/imageUtils";
+import { THEMES, type ThemeId, applyTheme } from "../utils/themes";
 
 const ADMIN_CODE = "2537";
 const ORDER_STATUSES = [
@@ -87,6 +90,7 @@ export function AdminPage() {
 
   const handleUnlock = () => {
     if (code === ADMIN_CODE) {
+      setAdminToken(code);
       setUnlocked(true);
       queryClient.invalidateQueries({ queryKey: ["actor"] });
     } else {
@@ -153,7 +157,7 @@ export function AdminPage() {
         <div className="w-16 h-px bg-gold mb-10" />
 
         <Tabs defaultValue="users">
-          <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-8 bg-secondary border border-gold-border">
+          <TabsList className="grid grid-cols-4 md:grid-cols-7 mb-8 bg-secondary border border-gold-border">
             {[
               {
                 value: "users",
@@ -179,6 +183,11 @@ export function AdminPage() {
                 value: "schemes",
                 icon: <Gift className="w-3.5 h-3.5" />,
                 label: "Schemes",
+              },
+              {
+                value: "appearance",
+                icon: <Palette className="w-3.5 h-3.5" />,
+                label: "Appearance",
               },
               {
                 value: "settings",
@@ -210,6 +219,9 @@ export function AdminPage() {
           </TabsContent>
           <TabsContent value="schemes">
             <SchemesTab />
+          </TabsContent>
+          <TabsContent value="appearance">
+            <AppearanceTab />
           </TabsContent>
           <TabsContent value="settings">
             <SettingsTab />
@@ -302,8 +314,8 @@ function CategoriesTab() {
       await createCategory.mutateAsync(newName.trim());
       setNewName("");
       toast.success("Category created");
-    } catch {
-      toast.error("Failed to create category");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to create category");
     }
   };
 
@@ -313,8 +325,8 @@ function CategoriesTab() {
       await updateCategory.mutateAsync({ id, name: editName.trim() });
       setEditId(null);
       toast.success("Category updated");
-    } catch {
-      toast.error("Failed to update category");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update category");
     }
   };
 
@@ -323,8 +335,8 @@ function CategoriesTab() {
     try {
       await deleteCategory.mutateAsync(id);
       toast.success("Category deleted");
-    } catch {
-      toast.error("Failed to delete category");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete category");
     }
   };
 
@@ -562,8 +574,8 @@ function ProductsTab() {
       }
       setDialogOpen(false);
       resetForm();
-    } catch {
-      toast.error("Operation failed");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Operation failed");
     }
   };
 
@@ -572,8 +584,8 @@ function ProductsTab() {
     try {
       await deleteProduct.mutateAsync(id);
       toast.success("Product deleted");
-    } catch {
-      toast.error("Failed to delete product");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete product");
     }
   };
 
@@ -1048,8 +1060,8 @@ function SchemesTab() {
       await createScheme.mutateAsync(form);
       setForm({ title: "", description: "", couponCode: "" });
       toast.success("Scheme added");
-    } catch {
-      toast.error("Failed to add scheme");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to add scheme");
     }
   };
 
@@ -1058,8 +1070,8 @@ function SchemesTab() {
     try {
       await deleteScheme.mutateAsync(id);
       toast.success("Scheme deleted");
-    } catch {
-      toast.error("Failed to delete scheme");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete scheme");
     }
   };
 
@@ -1203,8 +1215,8 @@ function SettingsTab() {
         qrImageType: qrImageType || settings?.qrImageType || "",
       });
       toast.success("Payment settings saved");
-    } catch {
-      toast.error("Failed to save settings");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save settings");
     }
   };
 
@@ -1289,6 +1301,76 @@ function SettingsTab() {
           </Button>
         </div>
       )}
+    </div>
+  );
+}
+
+function AppearanceTab() {
+  const [activeTheme, setActiveTheme] = useState<ThemeId>(
+    () => (localStorage.getItem("meet-theme") as ThemeId) || "bone-white",
+  );
+
+  const handleApply = (themeId: ThemeId) => {
+    applyTheme(themeId);
+    setActiveTheme(themeId);
+    toast.success(
+      `Theme "${THEMES.find((t) => t.id === themeId)?.name}" applied`,
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl tracking-widest uppercase text-gold mb-1">
+          Site Appearance
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Choose a colour theme for your storefront
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {THEMES.map((theme) => {
+          const isActive = activeTheme === theme.id;
+          return (
+            <button
+              key={theme.id}
+              type="button"
+              onClick={() => handleApply(theme.id)}
+              data-ocid={`admin.appearance.${theme.id}.button`}
+              className={`text-left rounded-lg border-2 p-5 transition-all ${
+                isActive
+                  ? "border-gold bg-secondary"
+                  : "border-border hover:border-muted-foreground"
+              }`}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <span
+                  className="w-7 h-7 rounded-full border border-border"
+                  style={{ background: theme.previewBg }}
+                />
+                <span
+                  className="w-7 h-7 rounded-full border border-border"
+                  style={{ background: theme.previewPrimary }}
+                />
+                <span
+                  className="w-7 h-7 rounded-full border border-border"
+                  style={{ background: theme.previewAccent }}
+                />
+                {isActive && <Check className="w-4 h-4 text-gold ml-auto" />}
+              </div>
+              <p className="font-semibold text-sm tracking-wide">
+                {theme.name}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {theme.description}
+              </p>
+              <p className="text-xs mt-2 text-gold font-medium">
+                {isActive ? "Active" : "Click to apply"}
+              </p>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -96,10 +96,11 @@ export interface _SERVICE {
   '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
-  'createCategory' : ActorMethod<[string], Category>,
+  'createCategory' : ActorMethod<[string, string], Category>,
   'createOrder' : ActorMethod<[Array<OrderItem>, string, string], Order>,
   'createProduct' : ActorMethod<
     [
+      string,
       {
         'mrp' : bigint,
         'categoryId' : bigint,
@@ -115,13 +116,13 @@ export interface _SERVICE {
     ],
     Product
   >,
-  'createScheme' : ActorMethod<[string, string, string], Scheme>,
-  'deleteCategory' : ActorMethod<[bigint], undefined>,
-  'deleteProduct' : ActorMethod<[bigint], undefined>,
-  'deleteScheme' : ActorMethod<[bigint], undefined>,
-  'getAllOrders' : ActorMethod<[], Array<Order>>,
-  'getAllUsers' : ActorMethod<[], Array<UserProfile>>,
-  'getAllVouchers' : ActorMethod<[], Array<Voucher>>,
+  'createScheme' : ActorMethod<[string, string, string, string], Scheme>,
+  'deleteCategory' : ActorMethod<[string, bigint], undefined>,
+  'deleteProduct' : ActorMethod<[string, bigint], undefined>,
+  'deleteScheme' : ActorMethod<[string, bigint], undefined>,
+  'getAllOrders' : ActorMethod<[string], Array<Order>>,
+  'getAllUsers' : ActorMethod<[string], Array<UserProfile>>,
+  'getAllVouchers' : ActorMethod<[string], Array<Voucher>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getCategories' : ActorMethod<[], Array<Category>>,
@@ -135,11 +136,12 @@ export interface _SERVICE {
   'getUserVouchers' : ActorMethod<[Principal], Array<Voucher>>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[string, string], undefined>,
-  'setPaymentSettings' : ActorMethod<[string, Uint8Array, string], undefined>,
-  'updateCategory' : ActorMethod<[bigint, string], Category>,
-  'updateOrderStatus' : ActorMethod<[string, string], undefined>,
+  'setPaymentSettings' : ActorMethod<[string, string, Uint8Array, string], undefined>,
+  'updateCategory' : ActorMethod<[string, bigint, string], Category>,
+  'updateOrderStatus' : ActorMethod<[string, string, string], undefined>,
   'updateProduct' : ActorMethod<
     [
+      string,
       bigint,
       {
         'mrp' : bigint,

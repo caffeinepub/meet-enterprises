@@ -171,9 +171,9 @@ export interface backendInterface {
     _caffeineStorageUpdateGatewayPrincipals(): Promise<void>;
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
-    createCategory(name: string): Promise<Category>;
+    createCategory(adminToken: string, name: string): Promise<Category>;
     createOrder(items: Array<OrderItem>, paymentMethod: string, deliveryLocation: string): Promise<Order>;
-    createProduct(productInfo: {
+    createProduct(adminToken: string, productInfo: {
         mrp: bigint;
         categoryId: bigint;
         inStock: boolean;
@@ -185,13 +185,13 @@ export interface backendInterface {
         image: Uint8Array;
         colours: Array<string>;
     }): Promise<Product>;
-    createScheme(title: string, description: string, couponCode: string): Promise<Scheme>;
-    deleteCategory(id: bigint): Promise<void>;
-    deleteProduct(id: bigint): Promise<void>;
-    deleteScheme(id: bigint): Promise<void>;
-    getAllOrders(): Promise<Array<Order>>;
-    getAllUsers(): Promise<Array<UserProfile>>;
-    getAllVouchers(): Promise<Array<Voucher>>;
+    createScheme(adminToken: string, title: string, description: string, couponCode: string): Promise<Scheme>;
+    deleteCategory(adminToken: string, id: bigint): Promise<void>;
+    deleteProduct(adminToken: string, id: bigint): Promise<void>;
+    deleteScheme(adminToken: string, id: bigint): Promise<void>;
+    getAllOrders(adminToken: string): Promise<Array<Order>>;
+    getAllUsers(adminToken: string): Promise<Array<UserProfile>>;
+    getAllVouchers(adminToken: string): Promise<Array<Voucher>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getCategories(): Promise<Array<Category>>;
@@ -205,10 +205,10 @@ export interface backendInterface {
     getUserVouchers(userId: Principal): Promise<Array<Voucher>>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(name: string, whatsapp: string): Promise<void>;
-    setPaymentSettings(upiId: string, qrImage: Uint8Array, qrImageType: string): Promise<void>;
-    updateCategory(id: bigint, name: string): Promise<Category>;
-    updateOrderStatus(orderId: string, status: string): Promise<void>;
-    updateProduct(id: bigint, productInfo: {
+    setPaymentSettings(adminToken: string, upiId: string, qrImage: Uint8Array, qrImageType: string): Promise<void>;
+    updateCategory(adminToken: string, id: bigint, name: string): Promise<Category>;
+    updateOrderStatus(adminToken: string, orderId: string, status: string): Promise<void>;
+    updateProduct(adminToken: string, id: bigint, productInfo: {
         mrp: bigint;
         categoryId: bigint;
         inStock: boolean;
@@ -336,17 +336,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async createCategory(arg0: string): Promise<Category> {
+    async createCategory(arg0: string, arg1: string): Promise<Category> {
         if (this.processError) {
             try {
-                const result = await this.actor.createCategory(arg0);
+                const result = await this.actor.createCategory(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.createCategory(arg0);
+            const result = await this.actor.createCategory(arg0, arg1);
             return result;
         }
     }
@@ -364,7 +364,7 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async createProduct(arg0: {
+    async createProduct(arg0: string, arg1: {
         mrp: bigint;
         categoryId: bigint;
         inStock: boolean;
@@ -378,112 +378,112 @@ export class Backend implements backendInterface {
     }): Promise<Product> {
         if (this.processError) {
             try {
-                const result = await this.actor.createProduct(arg0);
+                const result = await this.actor.createProduct(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.createProduct(arg0);
+            const result = await this.actor.createProduct(arg0, arg1);
             return result;
         }
     }
-    async createScheme(arg0: string, arg1: string, arg2: string): Promise<Scheme> {
+    async createScheme(arg0: string, arg1: string, arg2: string, arg3: string): Promise<Scheme> {
         if (this.processError) {
             try {
-                const result = await this.actor.createScheme(arg0, arg1, arg2);
+                const result = await this.actor.createScheme(arg0, arg1, arg2, arg3);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.createScheme(arg0, arg1, arg2);
+            const result = await this.actor.createScheme(arg0, arg1, arg2, arg3);
             return result;
         }
     }
-    async deleteCategory(arg0: bigint): Promise<void> {
+    async deleteCategory(arg0: string, arg1: bigint): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.deleteCategory(arg0);
+                const result = await this.actor.deleteCategory(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.deleteCategory(arg0);
+            const result = await this.actor.deleteCategory(arg0, arg1);
             return result;
         }
     }
-    async deleteProduct(arg0: bigint): Promise<void> {
+    async deleteProduct(arg0: string, arg1: bigint): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.deleteProduct(arg0);
+                const result = await this.actor.deleteProduct(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.deleteProduct(arg0);
+            const result = await this.actor.deleteProduct(arg0, arg1);
             return result;
         }
     }
-    async deleteScheme(arg0: bigint): Promise<void> {
+    async deleteScheme(arg0: string, arg1: bigint): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.deleteScheme(arg0);
+                const result = await this.actor.deleteScheme(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.deleteScheme(arg0);
+            const result = await this.actor.deleteScheme(arg0, arg1);
             return result;
         }
     }
-    async getAllOrders(): Promise<Array<Order>> {
+    async getAllOrders(arg0: string): Promise<Array<Order>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getAllOrders();
+                const result = await this.actor.getAllOrders(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getAllOrders();
+            const result = await this.actor.getAllOrders(arg0);
             return result;
         }
     }
-    async getAllUsers(): Promise<Array<UserProfile>> {
+    async getAllUsers(arg0: string): Promise<Array<UserProfile>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getAllUsers();
+                const result = await this.actor.getAllUsers(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getAllUsers();
+            const result = await this.actor.getAllUsers(arg0);
             return result;
         }
     }
-    async getAllVouchers(): Promise<Array<Voucher>> {
+    async getAllVouchers(arg0: string): Promise<Array<Voucher>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getAllVouchers();
+                const result = await this.actor.getAllVouchers(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getAllVouchers();
+            const result = await this.actor.getAllVouchers(arg0);
             return result;
         }
     }
@@ -669,49 +669,49 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async setPaymentSettings(arg0: string, arg1: Uint8Array, arg2: string): Promise<void> {
+    async setPaymentSettings(arg0: string, arg1: string, arg2: Uint8Array, arg3: string): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.setPaymentSettings(arg0, arg1, arg2);
+                const result = await this.actor.setPaymentSettings(arg0, arg1, arg2, arg3);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.setPaymentSettings(arg0, arg1, arg2);
+            const result = await this.actor.setPaymentSettings(arg0, arg1, arg2, arg3);
             return result;
         }
     }
-    async updateCategory(arg0: bigint, arg1: string): Promise<Category> {
+    async updateCategory(arg0: string, arg1: bigint, arg2: string): Promise<Category> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateCategory(arg0, arg1);
+                const result = await this.actor.updateCategory(arg0, arg1, arg2);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateCategory(arg0, arg1);
+            const result = await this.actor.updateCategory(arg0, arg1, arg2);
             return result;
         }
     }
-    async updateOrderStatus(arg0: string, arg1: string): Promise<void> {
+    async updateOrderStatus(arg0: string, arg1: string, arg2: string): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateOrderStatus(arg0, arg1);
+                const result = await this.actor.updateOrderStatus(arg0, arg1, arg2);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateOrderStatus(arg0, arg1);
+            const result = await this.actor.updateOrderStatus(arg0, arg1, arg2);
             return result;
         }
     }
-    async updateProduct(arg0: bigint, arg1: {
+    async updateProduct(arg0: string, arg1: bigint, arg2: {
         mrp: bigint;
         categoryId: bigint;
         inStock: boolean;
@@ -725,14 +725,14 @@ export class Backend implements backendInterface {
     }): Promise<Product> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateProduct(arg0, arg1);
+                const result = await this.actor.updateProduct(arg0, arg1, arg2);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateProduct(arg0, arg1);
+            const result = await this.actor.updateProduct(arg0, arg1, arg2);
             return result;
         }
     }
