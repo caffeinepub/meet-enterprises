@@ -15,15 +15,8 @@ export function useActor() {
       const isAuthenticated = !!identity;
 
       if (!isAuthenticated) {
-        // Return anonymous actor; try to initialize Caffeine access control if token available
-        const actor = await createActorWithConfig();
-        const caffeineToken = getSecretParameter("caffeineAdminToken");
-        try {
-          await actor._initializeAccessControlWithSecret(caffeineToken || "");
-        } catch {
-          // init not needed or failed - continue with actor as-is
-        }
-        return actor;
+        // Return anonymous actor if not authenticated
+        return await createActorWithConfig();
       }
 
       const actorOptions = {
@@ -34,15 +27,12 @@ export function useActor() {
 
       const actor = await createActorWithConfig(actorOptions);
       const adminToken = getSecretParameter("caffeineAdminToken") || "";
-      try {
-        await actor._initializeAccessControlWithSecret(adminToken);
-      } catch {
-        // init not needed or failed - continue with actor as-is
-      }
+      await actor._initializeAccessControlWithSecret(adminToken);
       return actor;
     },
     // Only refetch when identity changes
     staleTime: Number.POSITIVE_INFINITY,
+    // This will cause the actor to be recreated when the identity changes
     enabled: true,
   });
 

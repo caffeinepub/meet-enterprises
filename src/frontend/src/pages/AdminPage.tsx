@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useQueryClient } from "@tanstack/react-query";
+
 import {
   Check,
   Edit2,
@@ -86,13 +86,11 @@ export function AdminPage() {
   const [unlocked, setUnlocked] = useState(false);
   const [code, setCode] = useState("");
   const [error, setError] = useState(false);
-  const queryClient = useQueryClient();
 
   const handleUnlock = () => {
     if (code === ADMIN_CODE) {
       setAdminToken(code);
       setUnlocked(true);
-      queryClient.invalidateQueries({ queryKey: ["actor"] });
     } else {
       setError(true);
       setTimeout(() => setError(false), 1500);

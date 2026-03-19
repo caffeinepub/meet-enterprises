@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "@tanstack/react-router";
 import { ShoppingCart, Tag } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -21,6 +22,7 @@ export function ProductCard({
   index = 0,
 }: ProductCardProps) {
   const { addItem } = useCart();
+  const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const category = categories?.find((c) => c.id === product.categoryId);
   const salePrice = Number(product.mrp) - Number(product.discountAmount);
@@ -34,7 +36,8 @@ export function ProductCard({
       ? uint8ToDataUrl(product.image, product.imageType)
       : null;
 
-  const handleAddToCart = () => {
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (hasOptions) {
       setModalOpen(true);
     } else {
@@ -43,13 +46,21 @@ export function ProductCard({
     }
   };
 
+  const handleCardClick = () => {
+    navigate({
+      to: "/product/$productId",
+      params: { productId: product.id.toString() },
+    });
+  };
+
   return (
     <>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: index * 0.05 }}
-        className="card-luxury group flex flex-col overflow-hidden hover:border-gold transition-colors duration-300"
+        className="card-luxury group flex flex-col overflow-hidden hover:border-gold transition-colors duration-300 cursor-pointer"
+        onClick={handleCardClick}
         data-ocid={`product.item.${index + 1}`}
       >
         <div className="relative aspect-[3/4] overflow-hidden bg-secondary">

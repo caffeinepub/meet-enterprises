@@ -1,27 +1,24 @@
 # Meet Enterprises
 
 ## Current State
-The admin panel category creation button fails silently. The actor initialization in `useActor.ts` skips `_initializeAccessControlWithSecret` for anonymous users (Version 18 fix), but Caffeine's MixinStorage mixin may still require initialization for update calls. Additionally, admin mutations use `actor!` without null guards.
+The app has a ShopPage that displays products in a grid using ProductCard components. Clicking 'Add to Cart' opens a ProductOptionsModal for size/colour selection. There is no dedicated product detail page -- all product interaction happens on the shop grid or via a modal.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Try-catch around `_initializeAccessControlWithSecret` for anonymous actors so init is always attempted
-- Null guard + descriptive error in all admin mutation functions
-- Actual error message displayed in admin toasts (not generic "Failed to create category")
-- sessionStorage-backed admin token for robustness
+- New `ProductDetailPage` at route `/product/:productId`
+- Page shows: large product image, name, category badge, price (with discount), description, size selector buttons, colour selector buttons, quantity stepper, Add to Cart button
+- Related Products section at bottom: 4 random products from the store (excluding current product) in a horizontal scrollable row
+- Clicking a related product navigates to its detail page
 
 ### Modify
-- `useActor.ts`: for anonymous path, attempt `_initializeAccessControlWithSecret` with caffeineToken if present, or with empty string wrapped in try-catch
-- `useQueries.ts`: all admin mutations guard against null actor and empty token
-- `adminStore.ts`: persist token in sessionStorage so it survives any edge cases
-- `AdminPage.tsx`: show real error messages in toasts
+- `ProductCard`: clicking the card (image or name area) navigates to `/product/:productId` instead of only triggering add-to-cart
+- `App.tsx`: add the new product route `/product/$productId`
 
 ### Remove
-- Silent error swallowing in category/product/scheme admin actions
+- Nothing removed
 
 ## Implementation Plan
-1. Update `adminStore.ts` to use sessionStorage for persistence
-2. Update `useActor.ts` to always attempt init with try-catch
-3. Update admin mutations in `useQueries.ts` to add null/empty guards
-4. Update `AdminPage.tsx` toast error messages to show actual error
+1. Create `src/frontend/src/pages/ProductDetailPage.tsx` with all product detail UI, size/colour/quantity selection, add-to-cart logic, and related products section
+2. Register route `/product/$productId` in `App.tsx`
+3. Update `ProductCard` so clicking the card image or product name navigates to the detail page; the Add button still opens the modal/adds directly

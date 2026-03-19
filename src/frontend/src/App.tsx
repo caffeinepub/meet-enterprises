@@ -17,6 +17,7 @@ import { AdminPage } from "./pages/AdminPage";
 import { CartPage } from "./pages/CartPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { HomePage } from "./pages/HomePage";
+import { ProductDetailPage } from "./pages/ProductDetailPage";
 import { SchemesPage } from "./pages/SchemesPage";
 import { ShopPage } from "./pages/ShopPage";
 import { SupportFAQPage } from "./pages/SupportFAQPage";
@@ -86,6 +87,11 @@ const supportRoute = createRoute({
   path: "/support",
   component: SupportFAQPage,
 });
+const productRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/product/$productId",
+  component: ProductDetailPage,
+});
 
 const routeTree = rootRoute.addChildren([
   homeRoute,
@@ -95,6 +101,7 @@ const routeTree = rootRoute.addChildren([
   adminRoute,
   schemesRoute,
   supportRoute,
+  productRoute,
 ]);
 const router = createRouter({ routeTree, scrollRestoration: false });
 
