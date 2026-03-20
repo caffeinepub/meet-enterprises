@@ -36,12 +36,23 @@ export interface Product {
   'mrp' : bigint,
   'categoryId' : bigint,
   'inStock' : boolean,
-  'imageType' : string,
+  'imageType' : [] | [string],
   'discountAmount' : bigint,
   'name' : string,
   'description' : string,
   'sizes' : Array<string>,
   'image' : Uint8Array,
+  'colours' : Array<string>,
+}
+export interface ProductSummary {
+  'id' : bigint,
+  'mrp' : bigint,
+  'categoryId' : bigint,
+  'inStock' : boolean,
+  'discountAmount' : bigint,
+  'name' : string,
+  'description' : string,
+  'sizes' : Array<string>,
   'colours' : Array<string>,
 }
 export interface Scheme {
@@ -105,7 +116,7 @@ export interface _SERVICE {
         'mrp' : bigint,
         'categoryId' : bigint,
         'inStock' : boolean,
-        'imageType' : string,
+        'imageType' : [] | [string],
         'discountAmount' : bigint,
         'name' : string,
         'description' : string,
@@ -114,7 +125,7 @@ export interface _SERVICE {
         'colours' : Array<string>,
       },
     ],
-    Product
+    ProductSummary
   >,
   'createScheme' : ActorMethod<[string, string, string, string], Scheme>,
   'deleteCategory' : ActorMethod<[string, bigint], undefined>,
@@ -129,7 +140,7 @@ export interface _SERVICE {
   'getOrderById' : ActorMethod<[string], [] | [Order]>,
   'getPaymentSettings' : ActorMethod<[], [] | [PaymentSettings]>,
   'getProductById' : ActorMethod<[bigint], Product>,
-  'getProducts' : ActorMethod<[], Array<Product>>,
+  'getProducts' : ActorMethod<[], Array<ProductSummary>>,
   'getSchemes' : ActorMethod<[], Array<Scheme>>,
   'getUserOrders' : ActorMethod<[Principal], Array<Order>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
@@ -147,7 +158,7 @@ export interface _SERVICE {
         'mrp' : bigint,
         'categoryId' : bigint,
         'inStock' : boolean,
-        'imageType' : string,
+        'imageType' : [] | [string],
         'discountAmount' : bigint,
         'name' : string,
         'description' : string,
@@ -156,7 +167,7 @@ export interface _SERVICE {
         'colours' : Array<string>,
       },
     ],
-    Product
+    ProductSummary
   >,
 }
 export declare const idlService: IDL.ServiceClass;

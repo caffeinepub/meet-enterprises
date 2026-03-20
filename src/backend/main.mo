@@ -37,6 +37,7 @@ actor {
     name : Text;
   };
 
+  // Full product record (stored internally, returned by getProductById)
   public type Product = {
     id : Nat;
     name : Text;
@@ -48,6 +49,19 @@ actor {
     colours : [Text];
     image : Blob;
     imageType : Text;
+    inStock : Bool;
+  };
+
+  // Lightweight product summary (no image data) returned by getProducts()
+  public type ProductSummary = {
+    id : Nat;
+    name : Text;
+    description : Text;
+    mrp : Nat;
+    discountAmount : Nat;
+    categoryId : Nat;
+    sizes : [Text];
+    colours : [Text];
     inStock : Bool;
   };
 
@@ -115,7 +129,7 @@ actor {
     };
   };
 
-  // ── Stable backing storage (survives canister upgrades) ─────────────────
+  // ── Stable backing storage (survives canister upgrades) ───────────────────
   stable var _stableUserProfiles  : [(Principal, UserProfile)]  = [];
   stable var _stableCategories    : [(Nat, Category)]           = [];
   stable var _stableProducts      : [(Nat, Product)]            = [];
@@ -129,7 +143,7 @@ actor {
   stable var nextSchemeId   : Nat = 1;
   stable var paymentSettings : ?PaymentSettings = null;
 
-  // ── In-memory Maps (rebuilt from stable arrays on each upgrade) ──────────
+  // ── In-memory Maps (rebuilt from stable arrays on each upgrade) ────────────
   let userProfiles = Map.empty<Principal, UserProfile>();
   let categories   = Map.empty<Nat, Category>();
   let products     = Map.empty<Nat, Product>();
@@ -154,7 +168,7 @@ actor {
     _stableSchemes      := [];
   };
 
-  // ── Upgrade hooks ────────────────────────────────────────────────────────
+  // ── Upgrade hooks ───────────────────────────────────────────
   system func preupgrade() {
     let up = List.empty<(Principal, UserProfile)>();
     userProfiles.forEach(func(k, v) { up.add((k, v)) });
@@ -196,16 +210,32 @@ actor {
     _stableSchemes      := [];
   };
 
-  // ── Public read endpoints (no auth needed) ──────────────────────────────
+  // ── Public read endpoints (no auth needed) ─────────────────────────
 
   public query func getCategories() : async [Category] {
     categories.values().toArray();
   };
 
-  public query func getProducts() : async [Product] {
-    products.values().toArray();
+  // Returns lightweight product summaries (NO image data) to stay under ICP 2MB limit
+  public query func getProducts() : async [ProductSummary] {
+    let summaries = List.empty<ProductSummary>();
+    products.forEach(func(_k, p : Product) {
+      summaries.add({
+        id = p.id;
+        name = p.name;
+        description = p.description;
+        mrp = p.mrp;
+        discountAmount = p.discountAmount;
+        categoryId = p.categoryId;
+        sizes = p.sizes;
+        colours = p.colours;
+        inStock = p.inStock;
+      });
+    });
+    summaries.toArray();
   };
 
+  // Returns full product with image data (fetched individually)
   public query func getProductById(id : Nat) : async Product {
     switch (products.get(id)) {
       case (null) { Runtime.trap("Product not found") };
@@ -240,7 +270,7 @@ actor {
     userProfiles.add(caller, userProfile);
   };
 
-  // ── Orders (caller-based) ───────────────────────────────────────────────
+  // ── Orders (caller-based) ─────────────────────────────────────
 
   public shared ({ caller }) func createOrder(items : [OrderItem], paymentMethod : Text, deliveryLocation : Text) : async Order {
     let totalAmount = items.foldLeft(0, func(acc, item) { acc + (item.price * item.quantity) });
@@ -303,7 +333,7 @@ actor {
     orders.get(orderId);
   };
 
-  // ── Admin endpoints (token-based auth) ─────────────────────────────────
+  // ── Admin endpoints (token-based auth) ─────────────────────────────
 
   public shared func createCategory(adminToken : Text, name : Text) : async Category {
     if (not isValidAdmin(adminToken)) {
@@ -350,7 +380,7 @@ actor {
     image : Blob;
     imageType : Text;
     inStock : Bool;
-  }) : async Product {
+  }) : async ProductSummary {
     if (not isValidAdmin(adminToken)) {
       Runtime.trap("Unauthorized: Invalid admin code");
     };
@@ -369,7 +399,18 @@ actor {
     };
     products.add(nextProductId, product);
     nextProductId += 1;
-    product;
+    // Return summary (no image) to avoid exceeding message size
+    {
+      id = product.id;
+      name = product.name;
+      description = product.description;
+      mrp = product.mrp;
+      discountAmount = product.discountAmount;
+      categoryId = product.categoryId;
+      sizes = product.sizes;
+      colours = product.colours;
+      inStock = product.inStock;
+    };
   };
 
   public shared func updateProduct(adminToken : Text, id : Nat, productInfo : {
@@ -383,13 +424,16 @@ actor {
     image : Blob;
     imageType : Text;
     inStock : Bool;
-  }) : async Product {
+  }) : async ProductSummary {
     if (not isValidAdmin(adminToken)) {
       Runtime.trap("Unauthorized: Invalid admin code");
     };
     switch (products.get(id)) {
       case (null) { Runtime.trap("Product not found") };
-      case (?_) {
+      case (?existing) {
+        // If no new image provided, keep existing image
+        let newImage = if (productInfo.image.size() == 0) { existing.image } else { productInfo.image };
+        let newImageType = if (productInfo.imageType == "") { existing.imageType } else { productInfo.imageType };
         let product : Product = {
           id;
           name = productInfo.name;
@@ -399,12 +443,23 @@ actor {
           categoryId = productInfo.categoryId;
           sizes = productInfo.sizes;
           colours = productInfo.colours;
-          image = productInfo.image;
-          imageType = productInfo.imageType;
+          image = newImage;
+          imageType = newImageType;
           inStock = productInfo.inStock;
         };
         products.add(id, product);
-        product;
+        // Return summary (no image)
+        {
+          id = product.id;
+          name = product.name;
+          description = product.description;
+          mrp = product.mrp;
+          discountAmount = product.discountAmount;
+          categoryId = product.categoryId;
+          sizes = product.sizes;
+          colours = product.colours;
+          inStock = product.inStock;
+        };
       };
     };
   };

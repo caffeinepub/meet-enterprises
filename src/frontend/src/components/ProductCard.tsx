@@ -5,13 +5,14 @@ import { ShoppingCart, Tag } from "lucide-react";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { Category, Product } from "../backend.d";
+import type { Category, ProductSummary } from "../backend.d";
 import { useCart } from "../context/CartContext";
+import { useProductById } from "../hooks/useQueries";
 import { formatPrice, uint8ToDataUrl } from "../utils/imageUtils";
 import { ProductOptionsModal } from "./ProductOptionsModal";
 
 interface ProductCardProps {
-  product: Product;
+  product: ProductSummary;
   categories?: Category[];
   index?: number;
 }
@@ -24,6 +25,8 @@ export function ProductCard({
   const { addItem } = useCart();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
+  const { data: fullProduct } = useProductById(product.id);
+
   const category = categories?.find((c) => c.id === product.categoryId);
   const salePrice = Number(product.mrp) - Number(product.discountAmount);
   const hasDiscount = Number(product.discountAmount) > 0;
@@ -32,8 +35,8 @@ export function ProductCard({
     (product.colours && product.colours.length > 0);
 
   const imgSrc =
-    product.image && product.image.length > 0
-      ? uint8ToDataUrl(product.image, product.imageType)
+    fullProduct?.image && fullProduct.image.length > 0
+      ? uint8ToDataUrl(fullProduct.image, fullProduct.imageType)
       : null;
 
   const handleAddToCart = (e: React.MouseEvent) => {

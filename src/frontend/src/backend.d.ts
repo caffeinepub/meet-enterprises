@@ -7,12 +7,14 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
+
+// Full product with image data - returned by getProductById()
 export interface Product {
     id: bigint;
     mrp: bigint;
     categoryId: bigint;
     inStock: boolean;
-    imageType: string;
+    imageType: [] | [string];
     discountAmount: bigint;
     name: string;
     description: string;
@@ -20,6 +22,20 @@ export interface Product {
     image: Uint8Array;
     colours: Array<string>;
 }
+
+// Lightweight product summary without image - returned by getProducts()
+export interface ProductSummary {
+    id: bigint;
+    mrp: bigint;
+    categoryId: bigint;
+    inStock: boolean;
+    discountAmount: bigint;
+    name: string;
+    description: string;
+    sizes: Array<string>;
+    colours: Array<string>;
+}
+
 export interface PaymentSettings {
     qrImage: Uint8Array;
     qrImageType: string;
@@ -79,26 +95,26 @@ export interface backendInterface {
         mrp: bigint;
         categoryId: bigint;
         inStock: boolean;
-        imageType: string;
+        imageType: [] | [string];
         discountAmount: bigint;
         name: string;
         description: string;
         sizes: Array<string>;
         image: Uint8Array;
         colours: Array<string>;
-    }): Promise<Product>;
+    }): Promise<ProductSummary>;
     updateProduct(adminToken: string, id: bigint, productInfo: {
         mrp: bigint;
         categoryId: bigint;
         inStock: boolean;
-        imageType: string;
+        imageType: [] | [string];
         discountAmount: bigint;
         name: string;
         description: string;
         sizes: Array<string>;
         image: Uint8Array;
         colours: Array<string>;
-    }): Promise<Product>;
+    }): Promise<ProductSummary>;
     deleteProduct(adminToken: string, id: bigint): Promise<void>;
     createScheme(adminToken: string, title: string, description: string, couponCode: string): Promise<Scheme>;
     deleteScheme(adminToken: string, id: bigint): Promise<void>;
@@ -113,8 +129,8 @@ export interface backendInterface {
     getCategories(): Promise<Array<Category>>;
     getOrderById(orderId: string): Promise<Order | null>;
     getPaymentSettings(): Promise<PaymentSettings | null>;
-    getProductById(id: bigint): Promise<Product>;
-    getProducts(): Promise<Array<Product>>;
+    getProductById(id: bigint): Promise<Product>;  // returns full product with image
+    getProducts(): Promise<Array<ProductSummary>>;  // returns products WITHOUT image data
     getSchemes(): Promise<Array<Scheme>>;
     getUserOrders(userId: Principal): Promise<Array<Order>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;

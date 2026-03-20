@@ -8,25 +8,30 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ProductCard } from "../components/ProductCard";
 import { useCart } from "../context/CartContext";
-import { useCategories, useProducts } from "../hooks/useQueries";
+import {
+  useCategories,
+  useProductById,
+  useProducts,
+} from "../hooks/useQueries";
 import { formatPrice, uint8ToDataUrl } from "../utils/imageUtils";
 
 export function ProductDetailPage() {
   const { productId } = useParams({ strict: false }) as { productId: string };
   const navigate = useNavigate();
   const { addItem } = useCart();
-  const { data: products, isLoading: productsLoading } = useProducts();
-  const { data: categories } = useCategories();
 
-  const product = useMemo(() => {
-    if (!products || !productId) return null;
+  const productIdBigInt = useMemo(() => {
     try {
-      const id = BigInt(productId);
-      return products.find((p) => p.id === id) ?? null;
+      return productId ? BigInt(productId) : null;
     } catch {
       return null;
     }
-  }, [products, productId]);
+  }, [productId]);
+
+  const { data: product, isLoading: productLoading } =
+    useProductById(productIdBigInt);
+  const { data: products } = useProducts();
+  const { data: categories } = useCategories();
 
   const category = categories?.find((c) => c.id === product?.categoryId);
   const salePrice = product
@@ -47,11 +52,11 @@ export function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
 
   const relatedProducts = useMemo(() => {
-    if (!products || !product) return [];
-    const others = products.filter((p) => p.id !== product.id);
+    if (!products || !productIdBigInt) return [];
+    const others = products.filter((p) => p.id !== productIdBigInt);
     const shuffled = [...others].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 4);
-  }, [products, product]);
+  }, [products, productIdBigInt]);
 
   const handleAddToCart = () => {
     if (!product) return;
@@ -70,7 +75,7 @@ export function ProductDetailPage() {
     navigate({ to: "/cart" });
   };
 
-  if (productsLoading) {
+  if (productLoading) {
     return (
       <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">

@@ -1,8 +1,8 @@
 import { type ReactNode, createContext, useContext, useState } from "react";
-import type { Product } from "../backend.d";
+import type { ProductSummary } from "../backend.d";
 
 export interface CartItem {
-  product: Product;
+  product: ProductSummary;
   quantity: number;
   selectedSize?: string;
   selectedColour?: string;
@@ -11,7 +11,7 @@ export interface CartItem {
 interface CartContextType {
   items: CartItem[];
   addItem: (
-    product: Product,
+    product: ProductSummary,
     selectedSize?: string,
     selectedColour?: string,
   ) => void;
@@ -28,7 +28,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
   const addItem = (
-    product: Product,
+    product: ProductSummary,
     selectedSize?: string,
     selectedColour?: string,
   ) => {

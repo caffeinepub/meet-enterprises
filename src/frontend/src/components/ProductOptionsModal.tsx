@@ -8,12 +8,13 @@ import {
 import { ShoppingCart, Tag } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { Product } from "../backend.d";
+import type { ProductSummary } from "../backend.d";
 import { useCart } from "../context/CartContext";
+import { useProductById } from "../hooks/useQueries";
 import { formatPrice, uint8ToDataUrl } from "../utils/imageUtils";
 
 interface ProductOptionsModalProps {
-  product: Product;
+  product: ProductSummary;
   open: boolean;
   onClose: () => void;
 }
@@ -26,6 +27,7 @@ export function ProductOptionsModal({
   const { addItem } = useCart();
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColour, setSelectedColour] = useState<string | null>(null);
+  const { data: fullProduct } = useProductById(open ? product.id : null);
 
   const hasSizes = product.sizes && product.sizes.length > 0;
   const hasColours = product.colours && product.colours.length > 0;
@@ -37,8 +39,8 @@ export function ProductOptionsModal({
   const salePrice = Number(product.mrp) - Number(product.discountAmount);
 
   const imgSrc =
-    product.image && product.image.length > 0
-      ? uint8ToDataUrl(product.image, product.imageType)
+    fullProduct?.image && fullProduct.image.length > 0
+      ? uint8ToDataUrl(fullProduct.image, fullProduct.imageType)
       : null;
 
   const handleAdd = () => {

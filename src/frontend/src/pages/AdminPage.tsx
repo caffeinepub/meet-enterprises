@@ -46,6 +46,7 @@ import {
 import { motion } from "motion/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { useActor } from "../hooks/useActor";
 import {
   useAllOrders,
   useAllUsers,
@@ -500,6 +501,7 @@ function parseCommaSeparated(input: string): string[] {
 function ProductsTab() {
   const { data: products, isLoading } = useProducts();
   const { data: categories } = useCategories();
+  const { actor } = useActor();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
@@ -517,30 +519,59 @@ function ProductsTab() {
     setColourInput("");
   };
 
-  const openEdit = (p: any) => {
-    setEditingId(p.id);
-    setForm({
-      name: p.name,
-      description: p.description,
-      mrp: Number(p.mrp).toString(),
-      discountAmount: Number(p.discountAmount).toString(),
-      categoryId: p.categoryId.toString(),
-      inStock: p.inStock,
-      sizes: [...p.sizes],
-      colours: [...p.colours],
-      image: p.image,
-      imageType: p.imageType,
-    });
-    setSizeInput(p.sizes.join(", "));
-    setColourInput(p.colours.join(", "));
-    setDialogOpen(true);
+  const openEdit = async (p: {
+    id: bigint;
+    name: string;
+    description: string;
+    mrp: bigint;
+    discountAmount: bigint;
+    categoryId: bigint;
+    inStock: boolean;
+    sizes: string[];
+    colours: string[];
+  }) => {
+    try {
+      if (!actor) {
+        toast.error("Backend not connected");
+        return;
+      }
+      const full = await actor.getProductById(p.id);
+      setEditingId(full.id);
+      setForm({
+        name: full.name,
+        description: full.description,
+        mrp: Number(full.mrp).toString(),
+        discountAmount: Number(full.discountAmount).toString(),
+        categoryId: full.categoryId.toString(),
+        inStock: full.inStock,
+        sizes: [...full.sizes],
+        colours: [...full.colours],
+        image: full.image,
+        imageType: Array.isArray(full.imageType)
+          ? (full.imageType[0] ?? "")
+          : full.imageType || "",
+      });
+      setSizeInput(full.sizes.join(", "));
+      setColourInput(full.colours.join(", "));
+      setDialogOpen(true);
+    } catch {
+      toast.error("Failed to load product details");
+    }
   };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const result = await fileToUint8Array(file);
-    setForm((f) => ({ ...f, image: result.bytes, imageType: result.type }));
+    try {
+      const result = await fileToUint8Array(file);
+      setForm((f) => ({
+        ...f,
+        image: result.bytes,
+        imageType: result.type || "image/jpeg",
+      }));
+    } catch {
+      toast.error("Could not load image. Please try a JPG or PNG file.");
+    }
   };
 
   const handleSubmit = async () => {
@@ -560,7 +591,7 @@ function ProductsTab() {
       sizes: parsedSizes,
       colours: parsedColours,
       image: form.image ?? new Uint8Array(),
-      imageType: form.imageType,
+      imageType: form.imageType || "image/jpeg",
     };
     try {
       if (editingId !== null) {
@@ -851,9 +882,6 @@ function ProductsTab() {
                 </TableRow>
               ) : (
                 products.map((p, idx) => {
-                  const imgSrc = p.image?.length
-                    ? uint8ToDataUrl(p.image, p.imageType)
-                    : null;
                   return (
                     <TableRow
                       key={p.id.toString()}
@@ -861,15 +889,9 @@ function ProductsTab() {
                       data-ocid={`admin.product.item.${idx + 1}`}
                     >
                       <TableCell>
-                        {imgSrc ? (
-                          <img
-                            src={imgSrc}
-                            alt={p.name}
-                            className="w-10 h-12 object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-12 bg-muted" />
-                        )}
+                        <div className="w-10 h-12 bg-muted flex items-center justify-center">
+                          <Tag className="w-4 h-4 text-muted-foreground/30" />
+                        </div>
                       </TableCell>
                       <TableCell className="font-medium">{p.name}</TableCell>
                       <TableCell>
@@ -1197,12 +1219,16 @@ function SettingsTab() {
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const result = await fileToUint8Array(file);
-    setQrImage(result.bytes);
-    setQrImageType(result.type);
-    // Generate a local preview URL for the newly selected file
-    const objectUrl = URL.createObjectURL(file);
-    setNewQrPreviewUrl(objectUrl);
+    try {
+      const result = await fileToUint8Array(file);
+      setQrImage(result.bytes);
+      setQrImageType(result.type || "image/jpeg");
+      // Generate a local preview URL for the newly selected file
+      const objectUrl = URL.createObjectURL(file);
+      setNewQrPreviewUrl(objectUrl);
+    } catch {
+      toast.error("Could not load image. Please try a JPG or PNG file.");
+    }
   };
 
   const handleSave = async () => {

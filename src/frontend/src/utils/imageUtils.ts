@@ -1,9 +1,16 @@
-export function uint8ToDataUrl(bytes: Uint8Array, mimeType: string): string {
+export function uint8ToDataUrl(
+  bytes: Uint8Array,
+  mimeType: [] | [string] | string,
+): string {
   if (!bytes || bytes.length === 0) return "";
+  // Handle Candid optional: [] | [string]
+  const mime = Array.isArray(mimeType)
+    ? (mimeType[0] ?? "image/jpeg")
+    : mimeType || "image/jpeg";
   let binary = "";
   const len = bytes.length;
   for (let i = 0; i < len; i++) binary += String.fromCharCode(bytes[i]);
-  return `data:${mimeType};base64,${btoa(binary)}`;
+  return `data:${mime};base64,${btoa(binary)}`;
 }
 
 // Compress image to stay under ICP's 2MB message limit
@@ -64,7 +71,10 @@ export async function fileToUint8Array(
   const MAX_BYTES = 1_500_000; // 1.5 MB safe limit
 
   let source: Blob = file;
-  if (file.size > MAX_BYTES && file.type.startsWith("image/")) {
+  // Treat files with no MIME type as images (common on Android gallery pickers)
+  const isImage =
+    file.type.startsWith("image/") || file.type === "" || !file.type;
+  if (file.size > MAX_BYTES && isImage) {
     source = await compressImage(file, MAX_BYTES);
   }
 

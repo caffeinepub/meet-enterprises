@@ -54,9 +54,7 @@ export function CartPage() {
             data-ocid="cart.list"
           >
             {items.map((item, idx) => {
-              const imgSrc = item.product.image?.length
-                ? uint8ToDataUrl(item.product.image, item.product.imageType)
-                : null;
+              const imgSrc = null; // Images loaded separately via useProductById
               const salePrice =
                 Number(item.product.mrp) - Number(item.product.discountAmount);
               return (
