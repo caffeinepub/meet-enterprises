@@ -115,18 +115,86 @@ actor {
     };
   };
 
-  let userProfiles = Map.empty<Principal, UserProfile>();
-  let categories = Map.empty<Nat, Category>();
-  let products = Map.empty<Nat, Product>();
-  let orders = Map.empty<Text, Order>();
-  let vouchers = Map.empty<Nat, Voucher>();
-  let schemes = Map.empty<Nat, Scheme>();
+  // ── Stable backing storage (survives canister upgrades) ─────────────────
+  stable var _stableUserProfiles  : [(Principal, UserProfile)]  = [];
+  stable var _stableCategories    : [(Nat, Category)]           = [];
+  stable var _stableProducts      : [(Nat, Product)]            = [];
+  stable var _stableOrders        : [(Text, Order)]             = [];
+  stable var _stableVouchers      : [(Nat, Voucher)]            = [];
+  stable var _stableSchemes       : [(Nat, Scheme)]             = [];
 
-  var nextCategoryId = 1;
-  var nextProductId = 1;
-  var nextVoucherId = 1;
-  var nextSchemeId = 1;
-  var paymentSettings : ?PaymentSettings = null;
+  stable var nextCategoryId : Nat = 1;
+  stable var nextProductId  : Nat = 1;
+  stable var nextVoucherId  : Nat = 1;
+  stable var nextSchemeId   : Nat = 1;
+  stable var paymentSettings : ?PaymentSettings = null;
+
+  // ── In-memory Maps (rebuilt from stable arrays on each upgrade) ──────────
+  let userProfiles = Map.empty<Principal, UserProfile>();
+  let categories   = Map.empty<Nat, Category>();
+  let products     = Map.empty<Nat, Product>();
+  let orders       = Map.empty<Text, Order>();
+  let vouchers     = Map.empty<Nat, Voucher>();
+  let schemes      = Map.empty<Nat, Scheme>();
+
+  // Load any previously-saved stable data into the live Maps on first run
+  do {
+    for ((k, v) in _stableUserProfiles.vals()) { userProfiles.add(k, v) };
+    for ((k, v) in _stableCategories.vals())   { categories.add(k, v) };
+    for ((k, v) in _stableProducts.vals())     { products.add(k, v) };
+    for ((k, v) in _stableOrders.vals())       { orders.add(k, v) };
+    for ((k, v) in _stableVouchers.vals())     { vouchers.add(k, v) };
+    for ((k, v) in _stableSchemes.vals())      { schemes.add(k, v) };
+    // Clear after loading to free duplicate memory
+    _stableUserProfiles := [];
+    _stableCategories   := [];
+    _stableProducts     := [];
+    _stableOrders       := [];
+    _stableVouchers     := [];
+    _stableSchemes      := [];
+  };
+
+  // ── Upgrade hooks ────────────────────────────────────────────────────────
+  system func preupgrade() {
+    let up = List.empty<(Principal, UserProfile)>();
+    userProfiles.forEach(func(k, v) { up.add((k, v)) });
+    _stableUserProfiles := up.toArray();
+
+    let cp = List.empty<(Nat, Category)>();
+    categories.forEach(func(k, v) { cp.add((k, v)) });
+    _stableCategories := cp.toArray();
+
+    let pp = List.empty<(Nat, Product)>();
+    products.forEach(func(k, v) { pp.add((k, v)) });
+    _stableProducts := pp.toArray();
+
+    let op = List.empty<(Text, Order)>();
+    orders.forEach(func(k, v) { op.add((k, v)) });
+    _stableOrders := op.toArray();
+
+    let vp = List.empty<(Nat, Voucher)>();
+    vouchers.forEach(func(k, v) { vp.add((k, v)) });
+    _stableVouchers := vp.toArray();
+
+    let sp = List.empty<(Nat, Scheme)>();
+    schemes.forEach(func(k, v) { sp.add((k, v)) });
+    _stableSchemes := sp.toArray();
+  };
+
+  system func postupgrade() {
+    for ((k, v) in _stableUserProfiles.vals()) { userProfiles.add(k, v) };
+    for ((k, v) in _stableCategories.vals())   { categories.add(k, v) };
+    for ((k, v) in _stableProducts.vals())     { products.add(k, v) };
+    for ((k, v) in _stableOrders.vals())       { orders.add(k, v) };
+    for ((k, v) in _stableVouchers.vals())     { vouchers.add(k, v) };
+    for ((k, v) in _stableSchemes.vals())      { schemes.add(k, v) };
+    _stableUserProfiles := [];
+    _stableCategories   := [];
+    _stableProducts     := [];
+    _stableOrders       := [];
+    _stableVouchers     := [];
+    _stableSchemes      := [];
+  };
 
   // ── Public read endpoints (no auth needed) ──────────────────────────────
 

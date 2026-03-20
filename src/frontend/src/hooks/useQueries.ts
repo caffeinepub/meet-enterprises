@@ -27,79 +27,79 @@ function requireAdminToken(): string {
 }
 
 export function useCategories() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
   return useQuery<Category[]>({
     queryKey: ["categories"],
     queryFn: async () => (actor ? actor.getCategories() : []),
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
 export function useProducts() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
   return useQuery<Product[]>({
     queryKey: ["products"],
     queryFn: async () => (actor ? actor.getProducts() : []),
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
 export function useCallerProfile() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
   return useQuery<UserProfile | null>({
     queryKey: ["callerProfile"],
     queryFn: async () => (actor ? actor.getCallerUserProfile() : null),
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
 export function useIsAdmin() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
   return useQuery<boolean>({
     queryKey: ["isAdmin"],
     queryFn: async () => (actor ? actor.isCallerAdmin() : false),
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
 export function useAllUsers() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
   return useQuery<UserProfile[]>({
     queryKey: ["allUsers"],
     queryFn: async () => (actor ? actor.getAllUsers(getAdminToken()) : []),
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
 export function useAllOrders() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
   return useQuery<Order[]>({
     queryKey: ["allOrders"],
     queryFn: async () => (actor ? actor.getAllOrders(getAdminToken()) : []),
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
 export function useAllVouchers() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
   return useQuery<Voucher[]>({
     queryKey: ["allVouchers"],
     queryFn: async () => (actor ? actor.getAllVouchers(getAdminToken()) : []),
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
 export function usePaymentSettings() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
   return useQuery<PaymentSettings | null>({
     queryKey: ["paymentSettings"],
     queryFn: async () => (actor ? actor.getPaymentSettings() : null),
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
 export function useUserVouchers() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
   const profileQuery = useCallerProfile();
   return useQuery<Voucher[]>({
     queryKey: ["userVouchers", profileQuery.data?.id?.toString()],
@@ -107,16 +107,16 @@ export function useUserVouchers() {
       if (!actor || !profileQuery.data) return [];
       return actor.getUserVouchers(profileQuery.data.id);
     },
-    enabled: !!actor && !isFetching && !!profileQuery.data,
+    enabled: !!actor && !!profileQuery.data,
   });
 }
 
 export function useSchemes() {
-  const { actor, isFetching } = useActor();
+  const { actor } = useActor();
   return useQuery<Scheme[]>({
     queryKey: ["schemes"],
     queryFn: async () => (actor ? actor.getSchemes() : []),
-    enabled: !!actor && !isFetching,
+    enabled: !!actor,
   });
 }
 
@@ -131,7 +131,10 @@ export function useCreateCategory() {
       const token = requireAdminToken();
       return actor.createCategory(token, name);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.refetchQueries({ queryKey: ["categories"] });
+    },
   });
 }
 
@@ -144,7 +147,10 @@ export function useUpdateCategory() {
       const token = requireAdminToken();
       return actor.updateCategory(token, id, name);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.refetchQueries({ queryKey: ["categories"] });
+    },
   });
 }
 
@@ -157,7 +163,10 @@ export function useDeleteCategory() {
       const token = requireAdminToken();
       return actor.deleteCategory(token, id);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["categories"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.refetchQueries({ queryKey: ["categories"] });
+    },
   });
 }
 
@@ -183,7 +192,10 @@ export function useCreateProduct() {
       const token = requireAdminToken();
       return actor.createProduct(token, info);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.refetchQueries({ queryKey: ["products"] });
+    },
   });
 }
 
@@ -196,7 +208,10 @@ export function useUpdateProduct() {
       const token = requireAdminToken();
       return actor.updateProduct(token, id, info);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.refetchQueries({ queryKey: ["products"] });
+    },
   });
 }
 
@@ -209,7 +224,10 @@ export function useDeleteProduct() {
       const token = requireAdminToken();
       return actor.deleteProduct(token, id);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["products"] });
+      qc.refetchQueries({ queryKey: ["products"] });
+    },
   });
 }
 
