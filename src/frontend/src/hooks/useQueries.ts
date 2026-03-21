@@ -229,7 +229,7 @@ export function useCreateProduct() {
       const token = requireAdminToken();
       const candid_info = {
         ...info,
-        imageType: [info.imageType] as [] | [string],
+        imageType: info.imageType,
       };
       return actor.createProduct(token, candid_info);
     },
@@ -254,7 +254,7 @@ export function useUpdateProduct() {
       const token = requireAdminToken();
       const candid_info = {
         ...info,
-        imageType: [info.imageType] as [] | [string],
+        imageType: info.imageType,
       };
       return actor.updateProduct(token, id, candid_info);
     },

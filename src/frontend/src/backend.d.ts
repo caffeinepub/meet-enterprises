@@ -14,7 +14,7 @@ export interface Product {
     mrp: bigint;
     categoryId: bigint;
     inStock: boolean;
-    imageType: [] | [string];
+    imageType: string;
     discountAmount: bigint;
     name: string;
     description: string;
@@ -95,7 +95,7 @@ export interface backendInterface {
         mrp: bigint;
         categoryId: bigint;
         inStock: boolean;
-        imageType: [] | [string];
+        imageType: string;
         discountAmount: bigint;
         name: string;
         description: string;
@@ -107,7 +107,7 @@ export interface backendInterface {
         mrp: bigint;
         categoryId: bigint;
         inStock: boolean;
-        imageType: [] | [string];
+        imageType: string;
         discountAmount: bigint;
         name: string;
         description: string;

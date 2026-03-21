@@ -547,9 +547,7 @@ function ProductsTab() {
         sizes: [...full.sizes],
         colours: [...full.colours],
         image: full.image,
-        imageType: Array.isArray(full.imageType)
-          ? (full.imageType[0] ?? "")
-          : full.imageType || "",
+        imageType: full.imageType || "",
       });
       setSizeInput(full.sizes.join(", "));
       setColourInput(full.colours.join(", "));
