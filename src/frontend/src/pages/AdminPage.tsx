@@ -33,8 +33,10 @@ import {
   Check,
   Edit2,
   Gift,
+  Key,
   Package,
   Palette,
+  Play,
   Plus,
   Settings,
   ShoppingBag,
@@ -46,6 +48,7 @@ import {
 import { motion } from "motion/react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import type { Reel } from "../backend.d";
 import { useActor } from "../hooks/useActor";
 import {
   useAllOrders,
@@ -53,19 +56,22 @@ import {
   useCategories,
   useCreateCategory,
   useCreateProduct,
+  useCreateReel,
   useCreateScheme,
   useDeleteCategory,
   useDeleteProduct,
+  useDeleteReel,
   useDeleteScheme,
   usePaymentSettings,
   useProducts,
+  useReels,
   useSchemes,
   useSetPaymentSettings,
   useUpdateCategory,
   useUpdateOrderStatus,
   useUpdateProduct,
 } from "../hooks/useQueries";
-import { setAdminToken } from "../utils/adminStore";
+import { getAdminToken, setAdminToken } from "../utils/adminStore";
 import {
   fileToUint8Array,
   formatPrice,
@@ -79,6 +85,7 @@ const ORDER_STATUSES = [
   "Confirmed",
   "Processing",
   "Shipped",
+  "Out for Delivery",
   "Delivered",
   "Cancelled",
 ];
@@ -156,7 +163,7 @@ export function AdminPage() {
         <div className="w-16 h-px bg-gold mb-10" />
 
         <Tabs defaultValue="users">
-          <TabsList className="grid grid-cols-4 md:grid-cols-7 mb-8 bg-secondary border border-gold-border">
+          <TabsList className="grid grid-cols-4 md:grid-cols-8 mb-8 bg-secondary border border-gold-border">
             {[
               {
                 value: "users",
@@ -182,6 +189,11 @@ export function AdminPage() {
                 value: "schemes",
                 icon: <Gift className="w-3.5 h-3.5" />,
                 label: "Schemes",
+              },
+              {
+                value: "reels",
+                icon: <Play className="w-3.5 h-3.5" />,
+                label: "Reels",
               },
               {
                 value: "appearance",
@@ -218,6 +230,9 @@ export function AdminPage() {
           </TabsContent>
           <TabsContent value="schemes">
             <SchemesTab />
+          </TabsContent>
+          <TabsContent value="reels">
+            <ReelsTab />
           </TabsContent>
           <TabsContent value="appearance">
             <AppearanceTab />
@@ -879,67 +894,65 @@ function ProductsTab() {
                   </TableCell>
                 </TableRow>
               ) : (
-                products.map((p, idx) => {
-                  return (
-                    <TableRow
-                      key={p.id.toString()}
-                      className="border-gold-border"
-                      data-ocid={`admin.product.item.${idx + 1}`}
-                    >
-                      <TableCell>
-                        <div className="w-10 h-12 bg-muted flex items-center justify-center">
-                          <Tag className="w-4 h-4 text-muted-foreground/30" />
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{p.name}</TableCell>
-                      <TableCell>
-                        <span className="text-muted-foreground line-through text-xs">
-                          {formatPrice(p.mrp)}
-                        </span>
-                        <br />
-                        <span className="text-gold text-sm">
-                          {formatPrice(effectivePrice(p))}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {p.sizes.join(", ") || "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            p.inStock
-                              ? "bg-green-900/30 text-green-400 border-green-800"
-                              : "bg-red-900/30 text-red-400 border-red-800"
-                          }
+                products.map((p, idx) => (
+                  <TableRow
+                    key={p.id.toString()}
+                    className="border-gold-border"
+                    data-ocid={`admin.product.item.${idx + 1}`}
+                  >
+                    <TableCell>
+                      <div className="w-10 h-12 bg-muted flex items-center justify-center">
+                        <Tag className="w-4 h-4 text-muted-foreground/30" />
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell>
+                      <span className="text-muted-foreground line-through text-xs">
+                        {formatPrice(p.mrp)}
+                      </span>
+                      <br />
+                      <span className="text-gold text-sm">
+                        {formatPrice(effectivePrice(p))}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {p.sizes.join(", ") || "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={
+                          p.inStock
+                            ? "bg-green-900/30 text-green-400 border-green-800"
+                            : "bg-red-900/30 text-red-400 border-red-800"
+                        }
+                      >
+                        {p.inStock ? "In Stock" : "Out"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="w-7 h-7 text-muted-foreground hover:text-gold"
+                          onClick={() => openEdit(p)}
+                          data-ocid={`admin.product.edit_button.${idx + 1}`}
                         >
-                          {p.inStock ? "In Stock" : "Out"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex gap-2 justify-end">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="w-7 h-7 text-muted-foreground hover:text-gold"
-                            onClick={() => openEdit(p)}
-                            data-ocid={`admin.product.edit_button.${idx + 1}`}
-                          >
-                            <Edit2 className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="w-7 h-7 text-muted-foreground hover:text-destructive"
-                            onClick={() => handleDelete(p.id)}
-                            data-ocid={`admin.product.delete_button.${idx + 1}`}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+                          <Edit2 className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="w-7 h-7 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleDelete(p.id)}
+                          data-ocid={`admin.product.delete_button.${idx + 1}`}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>
@@ -953,9 +966,34 @@ function OrdersTab() {
   const { data: orders, isLoading } = useAllOrders();
   const { data: users } = useAllUsers();
   const updateStatus = useUpdateOrderStatus();
+  const { actor } = useActor();
+  const [deliveryCodes, setDeliveryCodes] = useState<Record<string, string>>(
+    {},
+  );
+  const [generatingCode, setGeneratingCode] = useState<string | null>(null);
 
   const getUser = (userId: string) =>
     users?.find((u) => u.id.toString() === userId);
+
+  const handleGenerateCode = async (orderId: string) => {
+    setGeneratingCode(orderId);
+    try {
+      if (!actor) throw new Error("Not connected");
+      const token = getAdminToken();
+      if (typeof (actor as any).generateDeliveryCode !== "function") {
+        throw new Error(
+          "Delivery code feature not available. Please refresh the page and try again.",
+        );
+      }
+      const code = await (actor as any).generateDeliveryCode(token, orderId);
+      setDeliveryCodes((prev) => ({ ...prev, [orderId]: code }));
+      toast.success(`Delivery code: ${code}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to generate code");
+    } finally {
+      setGeneratingCode(null);
+    }
+  };
 
   return (
     <div>
@@ -982,10 +1020,10 @@ function OrdersTab() {
                   Payment
                 </TableHead>
                 <TableHead className="text-gold-muted uppercase text-xs tracking-widest">
-                  Location
+                  Status
                 </TableHead>
                 <TableHead className="text-gold-muted uppercase text-xs tracking-widest">
-                  Status
+                  Code
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -1002,6 +1040,7 @@ function OrdersTab() {
               ) : (
                 orders.map((order, idx) => {
                   const user = getUser(order.userId.toString());
+                  const code = deliveryCodes[order.id];
                   return (
                     <TableRow
                       key={order.id}
@@ -1022,9 +1061,6 @@ function OrdersTab() {
                           {order.paymentMethod}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[120px] truncate">
-                        {order.deliveryLocation || "—"}
-                      </TableCell>
                       <TableCell>
                         <Select
                           value={order.status}
@@ -1035,7 +1071,7 @@ function OrdersTab() {
                             })
                           }
                         >
-                          <SelectTrigger className="h-7 text-xs bg-secondary border-gold-border w-32">
+                          <SelectTrigger className="h-7 text-xs bg-secondary border-gold-border w-36">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="bg-card border-gold-border">
@@ -1046,6 +1082,25 @@ function OrdersTab() {
                             ))}
                           </SelectContent>
                         </Select>
+                      </TableCell>
+                      <TableCell>
+                        {code ? (
+                          <span className="font-mono text-gold text-sm tracking-widest border border-gold-border px-2 py-0.5">
+                            {code}
+                          </span>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs border-gold-border text-gold-muted hover:text-gold hover:border-gold px-2"
+                            onClick={() => handleGenerateCode(order.id)}
+                            disabled={generatingCode === order.id}
+                            data-ocid={`admin.order.generate_code.button.${idx + 1}`}
+                          >
+                            <Key className="w-3 h-3 mr-1" />
+                            {generatingCode === order.id ? "..." : "Code"}
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -1198,6 +1253,167 @@ function SchemesTab() {
   );
 }
 
+function ReelsTab() {
+  const { data: reelsData, isLoading } = useReels();
+  const reels = reelsData as Reel[] | undefined;
+  const { data: products } = useProducts();
+  const createReel = useCreateReel();
+  const deleteReel = useDeleteReel();
+  const [title, setTitle] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  const [productId, setProductId] = useState("");
+
+  const handleCreate = async () => {
+    if (!title.trim() || !videoUrl.trim()) {
+      toast.error("Title and video URL are required");
+      return;
+    }
+    try {
+      await createReel.mutateAsync({
+        title: title.trim(),
+        videoUrl: videoUrl.trim(),
+        productId: productId && productId !== "none" ? BigInt(productId) : null,
+      });
+      setTitle("");
+      setVideoUrl("");
+      setProductId("");
+      toast.success("Reel added");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to add reel");
+    }
+  };
+
+  const handleDelete = async (id: bigint) => {
+    if (!confirm("Delete this reel?")) return;
+    try {
+      await deleteReel.mutateAsync(id);
+      toast.success("Reel deleted");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete reel");
+    }
+  };
+
+  return (
+    <div>
+      <h2 className="font-serif text-2xl text-gold uppercase tracking-widest mb-6">
+        Reels
+      </h2>
+
+      {/* Add reel form */}
+      <div className="card-luxury p-6 mb-6 flex flex-col gap-4">
+        <h3 className="text-sm tracking-widest uppercase text-muted-foreground">
+          Add New Reel
+        </h3>
+        <div>
+          <Label className="text-xs tracking-widest uppercase text-muted-foreground">
+            Title *
+          </Label>
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Summer Collection Highlights"
+            className="mt-1 bg-secondary border-gold-border"
+            data-ocid="admin.reel.title.input"
+          />
+        </div>
+        <div>
+          <Label className="text-xs tracking-widest uppercase text-muted-foreground">
+            Video URL *
+          </Label>
+          <Input
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            placeholder="https://example.com/video.mp4"
+            className="mt-1 bg-secondary border-gold-border font-mono text-sm"
+            data-ocid="admin.reel.url.input"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Paste a direct video URL (.mp4, .webm, or a streaming link)
+          </p>
+        </div>
+        <div>
+          <Label className="text-xs tracking-widest uppercase text-muted-foreground">
+            Link to Product (optional)
+          </Label>
+          <Select value={productId} onValueChange={setProductId}>
+            <SelectTrigger
+              className="mt-1 bg-secondary border-gold-border"
+              data-ocid="admin.reel.product.select"
+            >
+              <SelectValue placeholder="No product linked" />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-gold-border">
+              <SelectItem value="none">No product linked</SelectItem>
+              {products?.map((p) => (
+                <SelectItem key={p.id.toString()} value={p.id.toString()}>
+                  {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button
+          className="btn-gold tracking-widest uppercase self-start"
+          onClick={handleCreate}
+          disabled={createReel.isPending}
+          data-ocid="admin.reel.add.button"
+        >
+          <Plus className="w-4 h-4 mr-1" /> Add Reel
+        </Button>
+      </div>
+
+      {/* Reels list */}
+      {isLoading ? (
+        <Skeleton className="h-32 w-full" />
+      ) : !reels?.length ? (
+        <div
+          className="card-luxury p-8 text-center text-muted-foreground"
+          data-ocid="admin.reels.empty_state"
+        >
+          No reels yet
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {reels.map((reel, idx) => {
+            const linkedProduct =
+              reel.productId !== null
+                ? products?.find((p) => p.id === reel.productId)
+                : null;
+            return (
+              <div
+                key={reel.id.toString()}
+                className="card-luxury p-4 flex items-center justify-between gap-4"
+                data-ocid={`admin.reel.item.${idx + 1}`}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm">{reel.title}</p>
+                  <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">
+                    {reel.videoUrl}
+                  </p>
+                  {linkedProduct && (
+                    <p className="text-xs text-gold mt-1">
+                      🛒 {linkedProduct.name}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="w-7 h-7 text-muted-foreground hover:text-destructive flex-shrink-0"
+                  onClick={() => handleDelete(reel.id)}
+                  data-ocid={`admin.reel.delete.button.${idx + 1}`}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SettingsTab() {
   const { data: settings, isLoading } = usePaymentSettings();
   const setSettings = useSetPaymentSettings();
@@ -1207,7 +1423,6 @@ function SettingsTab() {
   const [newQrPreviewUrl, setNewQrPreviewUrl] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Sync upiId state from loaded settings (only on initial load)
   const initializedRef = useRef(false);
   if (!initializedRef.current && settings?.upiId && !upiId) {
     initializedRef.current = true;
@@ -1221,7 +1436,6 @@ function SettingsTab() {
       const result = await fileToUint8Array(file);
       setQrImage(result.bytes);
       setQrImageType(result.type || "image/jpeg");
-      // Generate a local preview URL for the newly selected file
       const objectUrl = URL.createObjectURL(file);
       setNewQrPreviewUrl(objectUrl);
     } catch {

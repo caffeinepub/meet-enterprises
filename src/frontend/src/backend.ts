@@ -162,6 +162,13 @@ export enum UserRole {
     user = "user",
     guest = "guest"
 }
+export interface Reel {
+    id: bigint;
+    title: string;
+    videoUrl: string;
+    productId: bigint | null;
+    createdAt: bigint;
+}
 export interface backendInterface {
     _caffeineStorageBlobIsLive(hash: Uint8Array): Promise<boolean>;
     _caffeineStorageBlobsToDelete(): Promise<Array<Uint8Array>>;
@@ -220,6 +227,10 @@ export interface backendInterface {
         image: Uint8Array;
         colours: Array<string>;
     }): Promise<Product>;
+    createReel(adminToken: string, title: string, videoUrl: string, productId: bigint | null): Promise<Reel>;
+    deleteReel(adminToken: string, id: bigint): Promise<void>;
+    getReels(): Promise<Array<Reel>>;
+    generateDeliveryCode(adminToken: string, orderId: string): Promise<string>;
 }
 import type { Order as _Order, PaymentSettings as _PaymentSettings, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -733,6 +744,62 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.updateProduct(arg0, arg1, arg2);
+            return result;
+        }
+    }
+
+    async createReel(arg0: string, arg1: string, arg2: string, arg3: bigint | null): Promise<Reel> {
+        const productIdCandid: [] | [bigint] = arg3 === null ? [] : [arg3];
+        if (this.processError) {
+            try {
+                const result = await this.actor.createReel(arg0, arg1, arg2, productIdCandid);
+                return { ...result, productId: result.productId.length === 0 ? null : result.productId[0] } as any;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createReel(arg0, arg1, arg2, productIdCandid);
+            return { ...result, productId: result.productId.length === 0 ? null : result.productId[0] } as any;
+        }
+    }
+    async deleteReel(arg0: string, arg1: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                await this.actor.deleteReel(arg0, arg1);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            await this.actor.deleteReel(arg0, arg1);
+        }
+    }
+    async getReels(): Promise<Array<Reel>> {
+        if (this.processError) {
+            try {
+                const results = await this.actor.getReels();
+                return results.map(r => ({ ...r, productId: r.productId.length === 0 ? null : r.productId[0] } as any));
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const results = await this.actor.getReels();
+            return results.map(r => ({ ...r, productId: r.productId.length === 0 ? null : r.productId[0] } as any));
+        }
+    }
+    async generateDeliveryCode(arg0: string, arg1: string): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.generateDeliveryCode(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.generateDeliveryCode(arg0, arg1);
             return result;
         }
     }

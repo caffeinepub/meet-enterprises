@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Minus, Plus, ShoppingCart, Tag } from "lucide-react";
+import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Tag } from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -50,6 +50,29 @@ export function ProductDetailPage() {
     undefined,
   );
   const [quantity, setQuantity] = useState(1);
+
+  const [wishlisted, setWishlisted] = useState<boolean>(() => {
+    const list: string[] = JSON.parse(
+      localStorage.getItem("meet-wishlist") || "[]",
+    );
+    return list.includes(productId ?? "");
+  });
+
+  const toggleWishlist = () => {
+    const list: string[] = JSON.parse(
+      localStorage.getItem("meet-wishlist") || "[]",
+    );
+    let updated: string[];
+    if (wishlisted) {
+      updated = list.filter((id) => id !== productId);
+      toast.info("Removed from wishlist");
+    } else {
+      updated = [...list, productId ?? ""];
+      toast.success("Added to wishlist");
+    }
+    localStorage.setItem("meet-wishlist", JSON.stringify(updated));
+    setWishlisted(!wishlisted);
+  };
 
   const relatedProducts = useMemo(() => {
     if (!products || !productIdBigInt) return [];
@@ -293,6 +316,18 @@ export function ProductDetailPage() {
           >
             <ShoppingCart className="w-4 h-4 mr-2" />
             {product.inStock ? "Add to Cart" : "Out of Stock"}
+          </Button>
+          {/* Wishlist */}
+          <Button
+            variant="outline"
+            className={`w-full py-3 text-sm tracking-widest uppercase mt-3 border-gold-border ${wishlisted ? "text-red-400 border-red-400/50" : "text-muted-foreground"}`}
+            onClick={toggleWishlist}
+            data-ocid="product_detail.wishlist.button"
+          >
+            <Heart
+              className={`w-4 h-4 mr-2 ${wishlisted ? "fill-red-400 text-red-400" : ""}`}
+            />
+            {wishlisted ? "Wishlisted" : "Add to Wishlist"}
           </Button>
         </motion.div>
       </div>

@@ -91,6 +91,20 @@ export const PaymentSettings = IDL.Record({
   'upiId' : IDL.Text,
 });
 
+
+export const Reel = IDL.Record({
+  'id' : IDL.Nat,
+  'title' : IDL.Text,
+  'videoUrl' : IDL.Text,
+  'productId' : IDL.Opt(IDL.Nat),
+  'createdAt' : IDL.Int,
+});
+
+export const RatingSummary = IDL.Record({
+  'average' : IDL.Float64,
+  'count' : IDL.Nat,
+});
+
 export const idlService = IDL.Service({
   '_caffeineStorageBlobIsLive' : IDL.Func(
       [IDL.Vec(IDL.Nat8)],
@@ -196,6 +210,17 @@ export const idlService = IDL.Service({
       [ProductSummary],
       [],
     ),
+  'createReel' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Opt(IDL.Nat)], [Reel], []),
+  'deleteReel' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+  'generateDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
+  'getDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
+  'getProductRating' : IDL.Func([IDL.Nat], [RatingSummary], ['query']),
+  'getReels' : IDL.Func([], [IDL.Vec(Reel)], ['query']),
+  'getTheme' : IDL.Func([], [IDL.Text], ['query']),
+  'getUserWishlist' : IDL.Func([IDL.Principal], [IDL.Vec(IDL.Nat)], ['query']),
+  'rateProduct' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
+  'setTheme' : IDL.Func([IDL.Text, IDL.Text], [], []),
+  'verifyDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
 });
 
 export const idlInitArgs = [];
@@ -282,6 +307,18 @@ export const idlFactory = ({ IDL }) => {
     'qrImageType' : IDL.Text,
     'upiId' : IDL.Text,
   });
+  const Reel = IDL.Record({
+    'id' : IDL.Nat,
+    'title' : IDL.Text,
+    'videoUrl' : IDL.Text,
+    'productId' : IDL.Opt(IDL.Nat),
+    'createdAt' : IDL.Int,
+  });
+  const RatingSummary = IDL.Record({
+    'average' : IDL.Float64,
+    'count' : IDL.Nat,
+  });
+
   
   return IDL.Service({
     '_caffeineStorageBlobIsLive' : IDL.Func(
@@ -392,6 +429,17 @@ export const idlFactory = ({ IDL }) => {
         [ProductSummary],
         [],
       ),
+    'createReel' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Opt(IDL.Nat)], [Reel], []),
+    'deleteReel' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+    'generateDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
+    'getDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
+    'getProductRating' : IDL.Func([IDL.Nat], [RatingSummary], ['query']),
+    'getReels' : IDL.Func([], [IDL.Vec(Reel)], ['query']),
+    'getTheme' : IDL.Func([], [IDL.Text], ['query']),
+    'getUserWishlist' : IDL.Func([IDL.Principal], [IDL.Vec(IDL.Nat)], ['query']),
+    'rateProduct' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
+    'setTheme' : IDL.Func([IDL.Text, IDL.Text], [], []),
+    'verifyDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
   });
 };
 

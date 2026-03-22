@@ -1,24 +1,31 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
 import { ProductCard } from "../components/ProductCard";
-import { useCategories, useProducts } from "../hooks/useQueries";
+import { useProducts } from "../hooks/useQueries";
 
 export function HomePage() {
   const navigate = useNavigate();
-  const { data: categories, isLoading: catLoading } = useCategories();
   const { data: products, isLoading: prodLoading } = useProducts();
-  const [activeCategory, setActiveCategory] = useState<bigint | null>(null);
 
-  const displayProducts = products
-    ? (activeCategory
-        ? products.filter((p) => p.categoryId === activeCategory)
-        : products
-      ).slice(0, 8)
-    : [];
+  const displayProducts = products ? products.slice(0, 8) : [];
+
+  const logos = [
+    {
+      src: "/assets/uploads/1781-photoaidcom-cropped.jpg-1.png",
+      alt: "Meet Enterprises",
+    },
+    {
+      src: "/assets/uploads/cropped_circle_image-2.png",
+      alt: "Navkar Fashion",
+    },
+    {
+      src: "/assets/uploads/cropped_circle_image-1--3.png",
+      alt: "Jyoti Stores",
+    },
+  ];
 
   return (
     <main>
@@ -67,151 +74,85 @@ export function HomePage() {
         />
       </section>
 
-      {/* Categories */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      {/* Business Logos */}
+      <section className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
+          className="flex items-center justify-center gap-8 md:gap-16 flex-wrap"
         >
-          <h2 className="font-serif text-3xl text-gold uppercase tracking-widest text-center mb-2">
-            Shop by Category
-          </h2>
-          <div className="w-16 h-px bg-gold mx-auto mb-12" />
-
-          {catLoading ? (
-            <div className="flex gap-4 overflow-x-auto pb-4">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton
-                  key={i}
-                  className="h-20 w-40 flex-shrink-0 rounded-sm"
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-3 justify-center">
-              <button
-                type="button"
-                onClick={() => setActiveCategory(null)}
-                className={`px-6 py-3 text-xs tracking-widest uppercase border transition-all duration-200 ${
-                  activeCategory === null
-                    ? "bg-gold text-background border-gold"
-                    : "border-gold-border text-muted-foreground hover:border-gold hover:text-gold"
-                }`}
-                data-ocid="category.all.tab"
+          {logos.map((logo) => (
+            <div key={logo.alt} className="relative group">
+              <div
+                className="rounded-full p-1"
+                style={{
+                  background:
+                    "linear-gradient(135deg, oklch(0.78 0.13 85), oklch(0.60 0.10 75), oklch(0.78 0.13 85))",
+                  boxShadow: "0 0 15px oklch(0.78 0.13 85 / 0.3)",
+                }}
               >
-                All
-              </button>
-              {categories?.map((cat, idx) => (
-                <button
-                  type="button"
-                  key={cat.id.toString()}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`px-6 py-3 text-xs tracking-widest uppercase border transition-all duration-200 ${
-                    activeCategory === cat.id
-                      ? "bg-gold text-background border-gold"
-                      : "border-gold-border text-muted-foreground hover:border-gold hover:text-gold"
-                  }`}
-                  data-ocid={`category.item.${idx + 1}`}
-                >
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </motion.div>
-      </section>
-
-      {/* Products */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-        >
-          <h2 className="font-serif text-3xl text-gold uppercase tracking-widest text-center mb-2">
-            Featured Collection
-          </h2>
-          <div className="w-16 h-px bg-gold mx-auto mb-12" />
-
-          {prodLoading ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Skeleton key={i} className="aspect-[3/4] rounded-sm" />
-              ))}
-            </div>
-          ) : displayProducts.length > 0 ? (
-            <>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {displayProducts.map((p, idx) => (
-                  <ProductCard
-                    key={p.id.toString()}
-                    product={p}
-                    categories={categories}
-                    index={idx}
-                  />
-                ))}
+                <img
+                  src={logo.src}
+                  alt={logo.alt}
+                  className="w-20 h-20 md:w-28 md:h-28 rounded-full object-cover block"
+                  style={{ background: "oklch(0.09 0.004 230)" }}
+                />
               </div>
-              {products && products.length > 8 && (
-                <div className="text-center mt-12">
-                  <Button
-                    variant="outline"
-                    className="border-gold text-gold hover:bg-gold hover:text-background tracking-widest uppercase px-10"
-                    onClick={() => navigate({ to: "/shop" })}
-                    data-ocid="home.view_all.button"
-                  >
-                    View All Products
-                    <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
-                </div>
-              )}
-            </>
-          ) : (
-            <div
-              className="text-center py-20 card-luxury rounded-sm"
-              data-ocid="product.empty_state"
-            >
-              <p className="text-muted-foreground">
-                No products available yet.
-              </p>
             </div>
-          )}
+          ))}
         </motion.div>
       </section>
 
-      {/* Offer Banner */}
-      <section
-        className="py-20 px-4"
-        style={{
-          background:
-            "linear-gradient(135deg, oklch(0.12 0.005 235), oklch(0.15 0.02 75 / 0.3))",
-        }}
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.97 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="max-w-4xl mx-auto text-center"
-        >
-          <Sparkles className="w-8 h-8 text-gold mx-auto mb-4" />
-          <h2 className="font-serif text-3xl md:text-4xl text-gold uppercase tracking-widest mb-4">
-            Exclusive Voucher Rewards
-          </h2>
-          <div className="w-16 h-px bg-gold mx-auto mb-6" />
-          <p className="text-foreground text-lg md:text-xl max-w-2xl mx-auto">
-            Spend <span className="text-gold font-semibold">₹1,500+</span> and
-            unlock exclusive voucher rewards worth up to{" "}
-            <span className="text-gold font-semibold">₹10,000!</span>
-          </p>
-          <Button
-            className="btn-gold mt-8 px-10 py-6 text-sm tracking-widest uppercase"
-            onClick={() => navigate({ to: "/shop" })}
-            data-ocid="banner.shop_now.button"
+      {/* Products Grid */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+        {prodLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            {Array.from({ length: 8 }, (_, i) => i + 1).map((i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="aspect-[3/4] w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : !displayProducts.length ? (
+          <div
+            className="text-center py-16"
+            data-ocid="home.products.empty_state"
           >
-            Shop Now
-          </Button>
-        </motion.div>
+            <p className="text-muted-foreground">No products available yet.</p>
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+          >
+            {displayProducts.map((product, idx) => (
+              <ProductCard
+                key={product.id.toString()}
+                product={product}
+                index={idx}
+              />
+            ))}
+          </motion.div>
+        )}
+
+        {products && products.length > 8 && (
+          <div className="text-center mt-8">
+            <Button
+              variant="outline"
+              className="border-gold-border text-gold hover:bg-gold/10 tracking-widest uppercase text-xs px-8 py-5"
+              onClick={() => navigate({ to: "/shop" })}
+              data-ocid="home.view_all.button"
+            >
+              View All Products
+            </Button>
+          </div>
+        )}
       </section>
     </main>
   );

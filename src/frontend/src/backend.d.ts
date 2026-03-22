@@ -80,6 +80,21 @@ export interface UserProfile {
     name: string;
     whatsapp: string;
 }
+
+// New types added for extended features
+export interface Reel {
+    id: bigint;
+    title: string;
+    videoUrl: string;
+    productId: bigint | null;
+    createdAt: bigint;
+}
+
+export interface ProductRating {
+    average: number;
+    count: bigint;
+}
+
 export enum UserRole {
     admin = "admin",
     user = "user",
@@ -137,5 +152,9 @@ export interface backendInterface {
     getUserVouchers(userId: Principal): Promise<Array<Voucher>>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(name: string, whatsapp: string): Promise<void>;
-    createOrder(items: Array<OrderItem>, paymentMethod: string, deliveryLocation: string): Promise<Order>;
+    createReel(adminToken: string, title: string, videoUrl: string, productId: bigint | null): Promise<Reel>;
+    deleteReel(adminToken: string, id: bigint): Promise<void>;
+    getReels(): Promise<Array<Reel>>;
+    generateDeliveryCode(adminToken: string, orderId: string): Promise<string>;
+        createOrder(items: Array<OrderItem>, paymentMethod: string, deliveryLocation: string): Promise<Order>;
 }

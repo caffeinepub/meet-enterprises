@@ -5,7 +5,9 @@ import type {
   OrderItem,
   PaymentSettings,
   Product,
+  ProductRating,
   ProductSummary,
+  Reel,
   Scheme,
   UserProfile,
   Voucher,
@@ -148,6 +150,47 @@ export function useSchemes() {
   });
 }
 
+// ---- New feature hooks ----
+
+export function useReels() {
+  const { actor } = useActor();
+  return useQuery<Reel[]>({
+    queryKey: ["reels"],
+    queryFn: async () => {
+      if (!actor) return [];
+      try {
+        return await actor.getReels();
+      } catch {
+        return [];
+      }
+    },
+    enabled: !!actor,
+  });
+}
+
+export function useProductRating(productId: bigint | null) {
+  const { actor } = useActor();
+  return useQuery<ProductRating>({
+    queryKey: ["productRating", productId?.toString()],
+    queryFn: async () => {
+      if (!actor || productId == null) return { average: 0, count: BigInt(0) };
+      try {
+        return await (actor as any).getProductRating(productId);
+      } catch {
+        // Fallback to localStorage rating
+        const saved = localStorage.getItem("meet-ratings");
+        if (saved) {
+          const ratings = JSON.parse(saved) as Record<string, number>;
+          const r = ratings[productId.toString()];
+          if (r) return { average: r, count: BigInt(1) };
+        }
+        return { average: 0, count: BigInt(0) };
+      }
+    },
+    enabled: productId != null,
+  });
+}
+
 // Mutations
 
 export function useCreateCategory() {
@@ -160,12 +203,10 @@ export function useCreateCategory() {
       return actor.createCategory(token, name);
     },
     onSuccess: (newCategory: Category) => {
-      // Directly update cache with new category
       qc.setQueryData(["categories"], (old: Category[] | undefined) => [
         ...(old || []),
         newCategory,
       ]);
-      // Also trigger background sync
       qc.invalidateQueries({ queryKey: ["categories"] });
     },
   });
@@ -227,19 +268,13 @@ export function useCreateProduct() {
     mutationFn: async (info: ProductInfo) => {
       requireActor(actor);
       const token = requireAdminToken();
-      const candid_info = {
-        ...info,
-        imageType: info.imageType,
-      };
-      return actor.createProduct(token, candid_info);
+      return actor.createProduct(token, info);
     },
     onSuccess: (newProduct: ProductSummary) => {
-      // Immediately add the returned summary to the cache so it shows up right away
       qc.setQueryData(["products"], (old: ProductSummary[] | undefined) => [
         ...(old || []),
         newProduct,
       ]);
-      // Also trigger a background sync from the backend
       qc.invalidateQueries({ queryKey: ["products"] });
     },
   });
@@ -252,14 +287,9 @@ export function useUpdateProduct() {
     mutationFn: async ({ id, info }: { id: bigint; info: ProductInfo }) => {
       requireActor(actor);
       const token = requireAdminToken();
-      const candid_info = {
-        ...info,
-        imageType: info.imageType,
-      };
-      return actor.updateProduct(token, id, candid_info);
+      return actor.updateProduct(token, id, info);
     },
     onSuccess: (updated: ProductSummary, { id }) => {
-      // Update the specific product in cache
       qc.setQueryData(["products"], (old: ProductSummary[] | undefined) =>
         (old || []).map((p) => (p.id === updated.id ? updated : p)),
       );
@@ -279,7 +309,6 @@ export function useDeleteProduct() {
       return actor.deleteProduct(token, id);
     },
     onSuccess: (_, id: bigint) => {
-      // Remove from cache immediately
       qc.setQueryData(["products"], (old: ProductSummary[] | undefined) =>
         (old || []).filter((p) => p.id !== id),
       );
@@ -320,10 +349,44 @@ export function useCreateOrder() {
       requireActor(actor);
       return actor.createOrder(items, paymentMethod, deliveryLocation);
     },
-    onSuccess: () => {
+    onSuccess: (newOrder: Order) => {
+      // Save order ID to localStorage for profile page retrieval
+      try {
+        const existing = JSON.parse(
+          localStorage.getItem("meet-order-ids") || "[]",
+        ) as string[];
+        if (!existing.includes(newOrder.id)) {
+          existing.unshift(newOrder.id);
+          localStorage.setItem("meet-order-ids", JSON.stringify(existing));
+        }
+      } catch {}
       qc.invalidateQueries({ queryKey: ["allOrders"] });
       qc.invalidateQueries({ queryKey: ["userVouchers"] });
+      qc.invalidateQueries({ queryKey: ["myOrders"] });
     },
+  });
+}
+
+export function useMyOrders() {
+  const { actor } = useActor();
+  return useQuery<Order[]>({
+    queryKey: ["myOrders"],
+    queryFn: async () => {
+      if (!actor) return [];
+      try {
+        const orderIds = JSON.parse(
+          localStorage.getItem("meet-order-ids") || "[]",
+        ) as string[];
+        if (!orderIds.length) return [];
+        const orders = await Promise.all(
+          orderIds.map((id) => actor.getOrderById(id)),
+        );
+        return orders.filter((o): o is Order => o != null);
+      } catch {
+        return [];
+      }
+    },
+    enabled: !!actor,
   });
 }
 
@@ -401,6 +464,51 @@ export function useDeleteScheme() {
         (old || []).filter((s) => s.id !== id),
       );
       qc.invalidateQueries({ queryKey: ["schemes"] });
+    },
+  });
+}
+
+export function useCreateReel() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      title,
+      videoUrl,
+      productId,
+    }: {
+      title: string;
+      videoUrl: string;
+      productId: bigint | null;
+    }) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return actor.createReel(token, title, videoUrl, productId);
+    },
+    onSuccess: (newReel: Reel) => {
+      qc.setQueryData(["reels"], (old: Reel[] | undefined) => [
+        ...(old || []),
+        newReel,
+      ]);
+      qc.invalidateQueries({ queryKey: ["reels"] });
+    },
+  });
+}
+
+export function useDeleteReel() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: bigint) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return actor.deleteReel(token, id);
+    },
+    onSuccess: (_, id: bigint) => {
+      qc.setQueryData(["reels"], (old: Reel[] | undefined) =>
+        (old || []).filter((r) => r.id !== id),
+      );
+      qc.invalidateQueries({ queryKey: ["reels"] });
     },
   });
 }

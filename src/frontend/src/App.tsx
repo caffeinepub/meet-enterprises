@@ -9,15 +9,19 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { AuthModal } from "./components/AuthModal";
+import { BottomNav } from "./components/BottomNav";
 import { Footer } from "./components/Footer";
 import { Navbar } from "./components/Navbar";
 import { SplashScreen } from "./components/SplashScreen";
 import { CartProvider } from "./context/CartContext";
 import { AdminPage } from "./pages/AdminPage";
 import { CartPage } from "./pages/CartPage";
+import { CategoriesPage } from "./pages/CategoriesPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { HomePage } from "./pages/HomePage";
 import { ProductDetailPage } from "./pages/ProductDetailPage";
+import { ProfilePage } from "./pages/ProfilePage";
+import { ReelsPage } from "./pages/ReelsPage";
 import { SchemesPage } from "./pages/SchemesPage";
 import { ShopPage } from "./pages/ShopPage";
 import { SupportFAQPage } from "./pages/SupportFAQPage";
@@ -42,10 +46,11 @@ function RootLayout() {
     <div className="min-h-screen flex flex-col">
       <ScrollToTop />
       <Navbar onLoginClick={() => setAuthOpen(true)} />
-      <div className="flex-1">
+      <div className="flex-1 pb-16">
         <Outlet />
       </div>
       <Footer />
+      <BottomNav />
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
     </div>
   );
@@ -92,6 +97,21 @@ const productRoute = createRoute({
   path: "/product/$productId",
   component: ProductDetailPage,
 });
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/profile",
+  component: ProfilePage,
+});
+const reelsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/reels",
+  component: ReelsPage,
+});
+const categoriesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/categories",
+  component: CategoriesPage,
+});
 
 const routeTree = rootRoute.addChildren([
   homeRoute,
@@ -102,6 +122,9 @@ const routeTree = rootRoute.addChildren([
   schemesRoute,
   supportRoute,
   productRoute,
+  profileRoute,
+  reelsRoute,
+  categoriesRoute,
 ]);
 const router = createRouter({ routeTree, scrollRestoration: false });
 
@@ -122,11 +145,12 @@ export default function App() {
     return () => clearTimeout(t);
   }, []);
 
+  if (showSplash) return <SplashScreen visible={true} />;
+
   return (
     <CartProvider>
-      <SplashScreen visible={showSplash} />
       <RouterProvider router={router} />
-      <Toaster position="top-right" richColors />
+      <Toaster richColors position="top-center" />
     </CartProvider>
   );
 }

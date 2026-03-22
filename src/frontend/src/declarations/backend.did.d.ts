@@ -89,6 +89,17 @@ export interface _CaffeineStorageRefillResult {
   'success' : [] | [boolean],
   'topped_up_amount' : [] | [bigint],
 }
+export interface Reel {
+  'id' : bigint,
+  'title' : string,
+  'videoUrl' : string,
+  'productId' : [] | [bigint],
+  'createdAt' : bigint,
+}
+export interface RatingSummary {
+  'average' : number,
+  'count' : bigint,
+}
 export interface _SERVICE {
   '_caffeineStorageBlobIsLive' : ActorMethod<[Uint8Array], boolean>,
   '_caffeineStorageBlobsToDelete' : ActorMethod<[], Array<Uint8Array>>,
@@ -150,6 +161,17 @@ export interface _SERVICE {
   'setPaymentSettings' : ActorMethod<[string, string, Uint8Array, string], undefined>,
   'updateCategory' : ActorMethod<[string, bigint, string], Category>,
   'updateOrderStatus' : ActorMethod<[string, string, string], undefined>,
+  'createReel' : ActorMethod<[string, string, string, [] | [bigint]], Reel>,
+  'deleteReel' : ActorMethod<[string, bigint], undefined>,
+  'generateDeliveryCode' : ActorMethod<[string, string], string>,
+  'getDeliveryCode' : ActorMethod<[string, string], [] | [string]>,
+  'getProductRating' : ActorMethod<[bigint], RatingSummary>,
+  'getReels' : ActorMethod<[], Array<Reel>>,
+  'getTheme' : ActorMethod<[], string>,
+  'getUserWishlist' : ActorMethod<[Principal], Array<bigint>>,
+  'rateProduct' : ActorMethod<[bigint, bigint], undefined>,
+  'setTheme' : ActorMethod<[string, string], undefined>,
+  'verifyDeliveryCode' : ActorMethod<[string, string], boolean>,
   'updateProduct' : ActorMethod<
     [
       string,
