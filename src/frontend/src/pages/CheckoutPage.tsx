@@ -5,6 +5,7 @@ import { CheckCircle2, Gift, MapPin, Package, Smartphone } from "lucide-react";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { AuthModal } from "../components/AuthModal";
 import { useCart } from "../context/CartContext";
 import { useInternetIdentityWithProfile } from "../hooks/useLocalProfile";
 import {
@@ -53,29 +54,33 @@ export function CheckoutPage() {
   const [savedTotal, setSavedTotal] = useState(0);
   const [location, setLocation] = useState("");
   const [locLoading, setLocLoading] = useState(false);
+  const [locError, setLocError] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
+  // Show login modal if not logged in
+  useEffect(() => {
+    if (!profile) {
+      setShowLoginModal(true);
+    }
+  }, [profile]);
+
+  // Auto-detect location on mount
   useEffect(() => {
     setLocLoading(true);
+    setLocError(false);
     navigator.geolocation?.getCurrentPosition(
       (pos) => {
         const loc = `${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)}`;
         setLocation(loc);
         setLocLoading(false);
       },
-      () => setLocLoading(false),
+      () => {
+        setLocLoading(false);
+        setLocError(true);
+      },
       { timeout: 8000 },
     );
   }, []);
-
-  if (!profile) {
-    return (
-      <main className="max-w-2xl mx-auto px-4 py-24 text-center">
-        <p className="text-muted-foreground">
-          Please log in to proceed with checkout.
-        </p>
-      </main>
-    );
-  }
 
   if (items.length === 0 && !orderPlaced) {
     return (
@@ -92,6 +97,16 @@ export function CheckoutPage() {
   }
 
   const handlePlaceOrder = async () => {
+    if (!profile) {
+      setShowLoginModal(true);
+      return;
+    }
+    if (!location.trim()) {
+      toast.error(
+        "Location is required to place an order. Please enable location access.",
+      );
+      return;
+    }
     if (items.length === 0) return;
     try {
       setSavedTotal(totalAmount);
@@ -103,7 +118,7 @@ export function CheckoutPage() {
       const order = await createOrder.mutateAsync({
         items: orderItems,
         paymentMethod,
-        deliveryLocation: location || "Not provided",
+        deliveryLocation: location,
       });
       clearCart();
       const vResult = await refetchVouchers();
@@ -185,8 +200,19 @@ export function CheckoutPage() {
 
   const activeUpiId = paymentSettings?.upiId || FALLBACK_UPI_ID;
 
+  const canPlaceOrder = !!location.trim() && !!profile;
+
   return (
     <>
+      {/* Login gate modal */}
+      <AuthModal
+        open={showLoginModal}
+        onClose={() => {
+          setShowLoginModal(false);
+          if (!profile) navigate({ to: "/" });
+        }}
+      />
+
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -245,6 +271,7 @@ export function CheckoutPage() {
                   className="text-xs tracking-widest uppercase text-muted-foreground flex items-center gap-2 mb-2"
                 >
                   <MapPin className="w-3.5 h-3.5 text-gold" /> Delivery Location
+                  <span className="text-destructive">*</span>
                 </label>
                 <input
                   type="text"
@@ -259,7 +286,18 @@ export function CheckoutPage() {
                   id="delivery-location"
                   data-ocid="checkout.location.input"
                 />
-                {!location && !locLoading && (
+                {locLoading && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Detecting your location...
+                  </p>
+                )}
+                {!location && !locLoading && locError && (
+                  <p className="text-xs text-destructive mt-1">
+                    📍 Location is required to place an order. Please enable
+                    location access or type your address above.
+                  </p>
+                )}
+                {!location && !locLoading && !locError && (
                   <p className="text-xs text-muted-foreground mt-1">
                     Location not detected — please type your address above.
                   </p>
@@ -354,13 +392,25 @@ export function CheckoutPage() {
               )}
 
               <Button
-                className="btn-gold w-full py-6 tracking-widest uppercase text-sm"
+                className="btn-gold w-full py-6 tracking-widest uppercase text-sm disabled:opacity-50"
                 onClick={handlePlaceOrder}
-                disabled={createOrder.isPending}
+                disabled={createOrder.isPending || !canPlaceOrder}
                 data-ocid="checkout.place_order.button"
               >
-                {createOrder.isPending ? "Placing Order..." : "Place Order"}
+                {!profile
+                  ? "Login to Place Order"
+                  : !location.trim()
+                    ? "Location Required"
+                    : createOrder.isPending
+                      ? "Placing Order..."
+                      : "Place Order"}
               </Button>
+
+              {!location.trim() && !locLoading && (
+                <p className="text-xs text-destructive text-center mt-2">
+                  📍 Location is required to place an order.
+                </p>
+              )}
             </div>
           </div>
         </motion.div>

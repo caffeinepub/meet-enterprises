@@ -33,7 +33,9 @@ import {
   Check,
   Edit2,
   Gift,
+  Instagram,
   Key,
+  MapPin,
   Package,
   Palette,
   Play,
@@ -46,7 +48,8 @@ import {
   Users,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { Reel } from "../backend.d";
 import { useActor } from "../hooks/useActor";
@@ -163,7 +166,7 @@ export function AdminPage() {
         <div className="w-16 h-px bg-gold mb-10" />
 
         <Tabs defaultValue="users">
-          <TabsList className="grid grid-cols-4 md:grid-cols-8 mb-8 bg-secondary border border-gold-border">
+          <TabsList className="grid grid-cols-5 md:grid-cols-9 mb-8 bg-secondary border border-gold-border">
             {[
               {
                 value: "users",
@@ -201,6 +204,11 @@ export function AdminPage() {
                 label: "Appearance",
               },
               {
+                value: "instagram",
+                icon: <Instagram className="w-3.5 h-3.5" />,
+                label: "Instagram",
+              },
+              {
                 value: "settings",
                 icon: <Settings className="w-3.5 h-3.5" />,
                 label: "Settings",
@@ -236,6 +244,9 @@ export function AdminPage() {
           </TabsContent>
           <TabsContent value="appearance">
             <AppearanceTab />
+          </TabsContent>
+          <TabsContent value="instagram">
+            <InstagramTab />
           </TabsContent>
           <TabsContent value="settings">
             <SettingsTab />
@@ -1023,6 +1034,9 @@ function OrdersTab() {
                   Status
                 </TableHead>
                 <TableHead className="text-gold-muted uppercase text-xs tracking-widest">
+                  Location
+                </TableHead>
+                <TableHead className="text-gold-muted uppercase text-xs tracking-widest">
                   Code
                 </TableHead>
               </TableRow>
@@ -1260,26 +1274,49 @@ function ReelsTab() {
   const createReel = useCreateReel();
   const deleteReel = useDeleteReel();
   const [title, setTitle] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string>("");
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
   const [productId, setProductId] = useState("");
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setVideoFile(file);
+    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+    setVideoPreviewUrl(file ? URL.createObjectURL(file) : "");
+  };
+
   const handleCreate = async () => {
-    if (!title.trim() || !videoUrl.trim()) {
-      toast.error("Title and video URL are required");
+    if (!title.trim() || !videoFile) {
+      toast.error("Title and video file are required");
       return;
     }
     try {
+      setIsUploading(true);
+      setUploadProgress(0);
+      const { uploadVideoToStorage } = await import("../utils/videoUpload");
+      const buffer = await videoFile.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      const uploadedUrl = await uploadVideoToStorage(bytes, (pct) =>
+        setUploadProgress(pct),
+      );
       await createReel.mutateAsync({
         title: title.trim(),
-        videoUrl: videoUrl.trim(),
+        videoUrl: uploadedUrl,
         productId: productId && productId !== "none" ? BigInt(productId) : null,
       });
       setTitle("");
-      setVideoUrl("");
+      setVideoFile(null);
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+      setVideoPreviewUrl("");
       setProductId("");
+      setUploadProgress(0);
       toast.success("Reel added");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to add reel");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -1318,18 +1355,58 @@ function ReelsTab() {
         </div>
         <div>
           <Label className="text-xs tracking-widest uppercase text-muted-foreground">
-            Video URL *
+            Video File *
           </Label>
-          <Input
-            value={videoUrl}
-            onChange={(e) => setVideoUrl(e.target.value)}
-            placeholder="https://example.com/video.mp4"
-            className="mt-1 bg-secondary border-gold-border font-mono text-sm"
-            data-ocid="admin.reel.url.input"
-          />
-          <p className="text-xs text-muted-foreground mt-1">
-            Paste a direct video URL (.mp4, .webm, or a streaming link)
-          </p>
+          <div className="mt-1 flex items-center gap-3">
+            <label
+              htmlFor="reel-video-upload"
+              className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gold-border bg-secondary text-sm hover:bg-secondary/80 transition-colors"
+              data-ocid="admin.reel.upload_button"
+            >
+              <Upload className="w-4 h-4 text-gold" />
+              Choose Video
+            </label>
+            <input
+              id="reel-video-upload"
+              type="file"
+              accept="video/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+            {videoFile && (
+              <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                {videoFile.name}
+              </span>
+            )}
+          </div>
+          {videoPreviewUrl && (
+            <video
+              src={videoPreviewUrl}
+              controls
+              className="mt-3 rounded-md border border-gold-border"
+              style={{
+                maxHeight: "180px",
+                width: "100%",
+                objectFit: "contain",
+              }}
+            >
+              <track kind="captions" />
+            </video>
+          )}
+          {isUploading && (
+            <div
+              className="mt-2 text-xs text-gold"
+              data-ocid="admin.reel.upload.loading_state"
+            >
+              Uploading... {uploadProgress}%
+              <div className="mt-1 h-1 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gold transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
         <div>
           <Label className="text-xs tracking-widest uppercase text-muted-foreground">
@@ -1355,10 +1432,11 @@ function ReelsTab() {
         <Button
           className="btn-gold tracking-widest uppercase self-start"
           onClick={handleCreate}
-          disabled={createReel.isPending}
+          disabled={isUploading || createReel.isPending}
           data-ocid="admin.reel.add.button"
         >
-          <Plus className="w-4 h-4 mr-1" /> Add Reel
+          <Plus className="w-4 h-4 mr-1" />
+          {isUploading ? "Uploading..." : "Add Reel"}
         </Button>
       </div>
 
@@ -1376,7 +1454,7 @@ function ReelsTab() {
         <div className="flex flex-col gap-3">
           {reels.map((reel, idx) => {
             const linkedProduct =
-              reel.productId !== null
+              reel.productId !== null && reel.productId !== undefined
                 ? products?.find((p) => p.id === reel.productId)
                 : null;
             return (
@@ -1385,11 +1463,20 @@ function ReelsTab() {
                 className="card-luxury p-4 flex items-center justify-between gap-4"
                 data-ocid={`admin.reel.item.${idx + 1}`}
               >
+                <video
+                  src={reel.videoUrl}
+                  controls
+                  style={{
+                    maxHeight: "80px",
+                    width: "80px",
+                    objectFit: "cover",
+                  }}
+                  className="rounded flex-shrink-0 border border-gold-border"
+                >
+                  <track kind="captions" />
+                </video>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm">{reel.title}</p>
-                  <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">
-                    {reel.videoUrl}
-                  </p>
                   {linkedProduct && (
                     <p className="text-xs text-gold mt-1">
                       🛒 {linkedProduct.name}
@@ -1537,6 +1624,71 @@ function SettingsTab() {
           </Button>
         </div>
       )}
+    </div>
+  );
+}
+
+function InstagramTab() {
+  const { actor } = useActor();
+  const [handle, setHandle] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!actor) return;
+    actor
+      .getInstagramHandle()
+      .then((h: string) => setHandle(h))
+      .catch(() => {});
+  }, [actor]);
+
+  const handleSave = async () => {
+    if (!actor) return;
+    setSaving(true);
+    try {
+      const token = getAdminToken();
+      await actor.setInstagramHandle(token, handle.trim());
+      toast.success("Instagram handle saved");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="max-w-lg">
+      <h2 className="font-serif text-2xl text-gold uppercase tracking-widest mb-2">
+        Instagram Settings
+      </h2>
+      <p className="text-sm text-muted-foreground mb-6">
+        Your Instagram handle will appear in the footer of each reel, clickable
+        for customers.
+      </p>
+      <div className="card-luxury p-6 flex flex-col gap-4">
+        <div>
+          <Label className="text-xs tracking-widest uppercase text-muted-foreground mb-2 block">
+            Instagram Handle
+          </Label>
+          <Input
+            value={handle}
+            onChange={(e) => setHandle(e.target.value)}
+            placeholder="@meet_.enterprise"
+            className="bg-secondary border-gold-border"
+            data-ocid="admin.instagram.input"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Enter with or without @ — e.g. @meet_.enterprise or meet_.enterprise
+          </p>
+        </div>
+        <Button
+          className="btn-gold tracking-widest uppercase"
+          onClick={handleSave}
+          disabled={saving}
+          data-ocid="admin.instagram.save_button"
+        >
+          {saving ? "Saving..." : "Save Handle"}
+        </Button>
+      </div>
     </div>
   );
 }

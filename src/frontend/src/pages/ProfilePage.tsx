@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "@tanstack/react-router";
 import { Heart, Package, Palette, ShoppingBag, Star, User } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useActor } from "../hooks/useActor";
 import { useLocalProfile } from "../hooks/useLocalProfile";
@@ -37,19 +37,21 @@ function saveLocalRating(productId: string, rating: number) {
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const colorMap: Record<string, string> = {
-    placed: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-    pending: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-    confirmed: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    processing: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    shipped: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    "out for delivery": "bg-orange-500/20 text-orange-400 border-orange-500/30",
-    delivered: "bg-green-500/20 text-green-400 border-green-500/30",
-    cancelled: "bg-red-500/20 text-red-400 border-red-500/30",
-  };
-  const cls =
-    colorMap[status.toLowerCase()] ||
-    "bg-muted text-muted-foreground border-border";
+  const s = status.toLowerCase();
+  let cls = "bg-muted text-muted-foreground border-border";
+  if (s === "placed") cls = "bg-blue-500/20 text-blue-400 border-blue-500/30";
+  else if (s === "pending")
+    cls = "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+  else if (s === "confirmed" || s === "processing")
+    cls = "bg-blue-500/20 text-blue-400 border-blue-500/30";
+  else if (s === "shipped")
+    cls = "bg-purple-500/20 text-purple-400 border-purple-500/30";
+  else if (s === "out for delivery")
+    cls = "bg-orange-500/20 text-orange-400 border-orange-500/30";
+  else if (s === "delivered")
+    cls = "bg-green-500/20 text-green-400 border-green-500/30";
+  else if (s === "cancelled")
+    cls = "bg-red-500/20 text-red-400 border-red-500/30";
   return <Badge className={`text-xs border ${cls}`}>{status}</Badge>;
 }
 
@@ -104,10 +106,25 @@ function StarRating({
   );
 }
 
-function DeliveryCodeEntry({ orderId }: { orderId: string }) {
+function DeliveryCodeEntry({
+  orderId,
+  onDelivered,
+}: {
+  orderId: string;
+  onDelivered?: () => void;
+}) {
   const [code, setCode] = useState("");
   const [confirming, setConfirming] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   const { actor } = useActor();
+
+  useEffect(() => {
+    if (!actor) return;
+    actor
+      .getOrderDeliveryCode(orderId)
+      .then((c) => setGeneratedCode(c))
+      .catch(() => {});
+  }, [actor, orderId]);
 
   const handleConfirm = async () => {
     if (code.length !== 4) {
@@ -119,9 +136,15 @@ function DeliveryCodeEntry({ orderId }: { orderId: string }) {
       if (!actor) throw new Error("Not connected");
       const ok = await actor.verifyDeliveryCode(orderId, code);
       if (ok) {
-        toast.success("Delivery confirmed! Thank you.");
+        toast.success(
+          "Your order has been delivered! Thank you for shopping with Meet Enterprises.",
+          {
+            duration: 5000,
+          },
+        );
+        onDelivered?.();
       } else {
-        toast.error("Incorrect code. Please check with the delivery person.");
+        toast.error("Incorrect code. Please check with your delivery person.");
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Verification failed");
@@ -131,25 +154,55 @@ function DeliveryCodeEntry({ orderId }: { orderId: string }) {
   };
 
   return (
-    <div className="flex gap-2 items-center mt-2">
-      <Input
-        type="text"
-        maxLength={4}
-        value={code}
-        onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-        placeholder="0000"
-        className="w-24 text-center tracking-[0.3em] bg-secondary border-gold-border text-sm h-8"
-        data-ocid="profile.delivery_code.input"
-      />
-      <Button
-        size="sm"
-        className="btn-gold text-xs tracking-widest h-8 px-3"
-        onClick={handleConfirm}
-        disabled={confirming}
-        data-ocid="profile.delivery_code.submit_button"
-      >
-        Confirm Delivery
-      </Button>
+    <div
+      className="mt-3 p-4 rounded-lg"
+      style={{
+        backgroundColor: "#000",
+        border: "1px solid rgba(255,255,255,0.1)",
+      }}
+    >
+      {generatedCode && (
+        <div
+          className="mb-3 p-3 rounded-lg"
+          style={{
+            backgroundColor: "rgba(255,215,0,0.08)",
+            border: "1px solid rgba(255,215,0,0.3)",
+          }}
+        >
+          <p className="text-xs text-white/50 uppercase tracking-widest mb-1">
+            Your Delivery Code
+          </p>
+          <p className="text-3xl font-bold tracking-[0.4em] text-gold text-center">
+            {generatedCode}
+          </p>
+          <p className="text-xs text-white/40 text-center mt-1">
+            Show this to your delivery person
+          </p>
+        </div>
+      )}
+      <p className="text-xs text-white/60 mb-2 uppercase tracking-widest">
+        Enter Delivery Code
+      </p>
+      <div className="flex gap-2 items-center">
+        <input
+          type="text"
+          maxLength={4}
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+          placeholder="0  0  0  0"
+          className="w-28 text-center tracking-[0.5em] bg-white/5 border border-white/20 rounded px-3 py-2 text-white text-base outline-none focus:border-gold"
+          data-ocid="profile.delivery_code.input"
+        />
+        <Button
+          size="sm"
+          className="btn-gold text-xs tracking-widest h-10 px-4"
+          onClick={handleConfirm}
+          disabled={confirming || code.length !== 4}
+          data-ocid="profile.delivery_code.submit_button"
+        >
+          {confirming ? "Verifying..." : "Confirm"}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -215,7 +268,11 @@ function WishlistProduct({ productId }: { productId: string }) {
 
 export function ProfilePage() {
   const { profile } = useLocalProfile();
-  const { data: orders, isLoading: ordersLoading } = useMyOrders();
+  const {
+    data: orders,
+    isLoading: ordersLoading,
+    refetch: refetchOrders,
+  } = useMyOrders();
   const { data: allProducts } = useProducts();
   const [wishlist] = useState<string[]>(() => getWishlist());
   const [localRatings] = useState<Record<string, number>>(() =>
@@ -402,12 +459,10 @@ export function ProfilePage() {
 
                     {/* Delivery code entry for out-for-delivery orders */}
                     {order.status.toLowerCase() === "out for delivery" && (
-                      <div className="mt-2 pt-2 border-t border-gold-border/30">
-                        <p className="text-xs text-muted-foreground">
-                          Enter the 4-digit code from your delivery person:
-                        </p>
-                        <DeliveryCodeEntry orderId={order.id} />
-                      </div>
+                      <DeliveryCodeEntry
+                        orderId={order.id}
+                        onDelivered={() => refetchOrders()}
+                      />
                     )}
                   </div>
                 ))}

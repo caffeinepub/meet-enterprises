@@ -123,6 +123,15 @@ actor {
     count : Nat;
   };
 
+  public type ReelComment = {
+    id : Nat;
+    reelId : Nat;
+    userId : Principal;
+    userName : Text;
+    text : Text;
+    createdAt : Int;
+  };
+
   func compareOrderByCreatedAt(o1 : Order, o2 : Order) : Order.Order {
     if (o1.createdAt > o2.createdAt) { #less } else if (o1.createdAt < o2.createdAt) {
       #greater;
@@ -155,6 +164,14 @@ actor {
     };
   };
 
+  func compareCommentByCreatedAt(c1 : ReelComment, c2 : ReelComment) : Order.Order {
+    if (c1.createdAt < c2.createdAt) { #less } else if (c1.createdAt > c2.createdAt) {
+      #greater;
+    } else {
+      Nat.compare(c1.id, c2.id);
+    };
+  };
+
   // ── Stable backing storage ───────────────────────────────────────────
   stable var _stableUserProfiles   : [(Principal, UserProfile)]  = [];
   stable var _stableCategories     : [(Nat, Category)]           = [];
@@ -166,19 +183,24 @@ actor {
   stable var _stableWishlists      : [(Principal, [Nat])]        = [];
   stable var _stableDeliveryCodes  : [(Text, Text)]              = [];
   stable var _stableRatings        : [(Text, ProductRating)]     = [];
+  stable var _stableReelComments   : [(Text, ReelComment)]       = [];
+  stable var _stableReelLikes      : [(Text, Bool)]              = [];
 
   var nextCategoryId  : Nat = 1;
   var nextProductId   : Nat = 1;
   var nextVoucherId   : Nat = 1;
   var nextSchemeId    : Nat = 1;
   var nextReelId      : Nat = 1;
+  var nextCommentId   : Nat = 1;
   stable var _nextCategoryId  : Nat = 1;
   stable var _nextProductId   : Nat = 1;
   stable var _nextVoucherId   : Nat = 1;
   stable var _nextSchemeId    : Nat = 1;
   stable var _nextReelId      : Nat = 1;
+  stable var _nextCommentId   : Nat = 1;
   stable var paymentSettings  : ?PaymentSettings = null;
   stable var currentTheme     : Text = "bone-white";
+  stable var instagramHandle  : Text = "";
 
   // ── In-memory Maps ────────────────────────────────────────────────────
   let userProfiles   = Map.empty<Principal, UserProfile>();
@@ -191,6 +213,8 @@ actor {
   let wishlists      = Map.empty<Principal, [Nat]>();
   let deliveryCodes  = Map.empty<Text, Text>();
   let ratings        = Map.empty<Text, ProductRating>();
+  let reelComments   = Map.empty<Text, ReelComment>();
+  let reelLikes      = Map.empty<Text, Bool>();
 
   do {
     for ((k, v) in _stableUserProfiles.vals())  { userProfiles.add(k, v) };
@@ -203,11 +227,14 @@ actor {
     for ((k, v) in _stableWishlists.vals())     { wishlists.add(k, v) };
     for ((k, v) in _stableDeliveryCodes.vals()) { deliveryCodes.add(k, v) };
     for ((k, v) in _stableRatings.vals())       { ratings.add(k, v) };
+    for ((k, v) in _stableReelComments.vals())  { reelComments.add(k, v) };
+    for ((k, v) in _stableReelLikes.vals())     { reelLikes.add(k, v) };
     nextCategoryId := _nextCategoryId;
     nextProductId  := _nextProductId;
     nextVoucherId  := _nextVoucherId;
     nextSchemeId   := _nextSchemeId;
     nextReelId     := _nextReelId;
+    nextCommentId  := _nextCommentId;
     _stableUserProfiles  := [];
     _stableCategories    := [];
     _stableProducts      := [];
@@ -218,6 +245,8 @@ actor {
     _stableWishlists     := [];
     _stableDeliveryCodes := [];
     _stableRatings       := [];
+    _stableReelComments  := [];
+    _stableReelLikes     := [];
   };
 
   system func preupgrade() {
@@ -261,11 +290,20 @@ actor {
     ratings.forEach(func(k, v) { ratp.add((k, v)) });
     _stableRatings := ratp.toArray();
 
+    let rcp = List.empty<(Text, ReelComment)>();
+    reelComments.forEach(func(k, v) { rcp.add((k, v)) });
+    _stableReelComments := rcp.toArray();
+
+    let rlp = List.empty<(Text, Bool)>();
+    reelLikes.forEach(func(k, v) { rlp.add((k, v)) });
+    _stableReelLikes := rlp.toArray();
+
     _nextCategoryId := nextCategoryId;
     _nextProductId  := nextProductId;
     _nextVoucherId  := nextVoucherId;
     _nextSchemeId   := nextSchemeId;
     _nextReelId     := nextReelId;
+    _nextCommentId  := nextCommentId;
   };
 
   system func postupgrade() {
@@ -279,11 +317,14 @@ actor {
     for ((k, v) in _stableWishlists.vals())     { wishlists.add(k, v) };
     for ((k, v) in _stableDeliveryCodes.vals()) { deliveryCodes.add(k, v) };
     for ((k, v) in _stableRatings.vals())       { ratings.add(k, v) };
+    for ((k, v) in _stableReelComments.vals())  { reelComments.add(k, v) };
+    for ((k, v) in _stableReelLikes.vals())     { reelLikes.add(k, v) };
     nextCategoryId := _nextCategoryId;
     nextProductId  := _nextProductId;
     nextVoucherId  := _nextVoucherId;
     nextSchemeId   := _nextSchemeId;
     nextReelId     := _nextReelId;
+    nextCommentId  := _nextCommentId;
     _stableUserProfiles  := [];
     _stableCategories    := [];
     _stableProducts      := [];
@@ -294,6 +335,8 @@ actor {
     _stableWishlists     := [];
     _stableDeliveryCodes := [];
     _stableRatings       := [];
+    _stableReelComments  := [];
+    _stableReelLikes     := [];
   };
 
   // ── Public read endpoints ─────────────────────────────────────────────
@@ -359,13 +402,71 @@ actor {
     };
   };
 
+  public query func getInstagramHandle() : async Text {
+    instagramHandle;
+  };
+
+  // ── Reel comments ────────────────────────────────────────────
+
+  public shared ({ caller }) func addReelComment(reelId : Nat, text : Text) : async ReelComment {
+    let userName = switch (userProfiles.get(caller)) {
+      case (?p) p.name;
+      case null "Guest";
+    };
+    let comment : ReelComment = {
+      id = nextCommentId;
+      reelId;
+      userId = caller;
+      userName;
+      text;
+      createdAt = Time.now();
+    };
+    let key = reelId.toText() # "-" # nextCommentId.toText();
+    reelComments.add(key, comment);
+    nextCommentId += 1;
+    comment;
+  };
+
+  public query func getReelComments(reelId : Nat) : async [ReelComment] {
+    let result = List.empty<ReelComment>();
+    reelComments.forEach(func(_k, c : ReelComment) {
+      if (c.reelId == reelId) { result.add(c) };
+    });
+    result.toArray().sort(compareCommentByCreatedAt);
+  };
+
+  // ── Reel likes ───────────────────────────────────────────────
+
+  public shared ({ caller }) func likeReel(reelId : Nat) : async () {
+    let key = reelId.toText() # "-" # caller.toText();
+    reelLikes.add(key, true);
+  };
+
+  public shared ({ caller }) func unlikeReel(reelId : Nat) : async () {
+    let key = reelId.toText() # "-" # caller.toText();
+    reelLikes.remove(key);
+  };
+
+  public query func isReelLiked(reelId : Nat, userId : Principal) : async Bool {
+    let key = reelId.toText() # "-" # userId.toText();
+    switch (reelLikes.get(key)) { case (?v) v; case null false };
+  };
+
+  public query func getReelLikeCount(reelId : Nat) : async Nat {
+    var count : Nat = 0;
+    reelLikes.forEach(func(k, _v) {
+      if (k.startsWith(#text (reelId.toText() # "-"))) { count += 1 };
+    });
+    count;
+  };
+
   // ── User profile ────────────────────────────────────────────
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     userProfiles.get(caller);
   };
 
-  public query ({ caller }) func getUserProfile(user : Principal) : async ?UserProfile {
+  public query ({ caller = _ }) func getUserProfile(user : Principal) : async ?UserProfile {
     userProfiles.get(user);
   };
 
@@ -484,6 +585,10 @@ actor {
     deliveryCodes.get(orderId);
   };
 
+  public query func getOrderDeliveryCode(orderId : Text) : async ?Text {
+    deliveryCodes.get(orderId);
+  };
+
   public shared func verifyDeliveryCode(orderId : Text, code : Text) : async Bool {
     switch (deliveryCodes.get(orderId)) {
       case (null) { false };
@@ -523,6 +628,13 @@ actor {
   public shared func setTheme(adminToken : Text, themeId : Text) : async () {
     if (not isValidAdmin(adminToken)) { Runtime.trap("Unauthorized: Invalid admin code") };
     currentTheme := themeId;
+  };
+
+  // ── Instagram handle ─────────────────────────────────────────
+
+  public shared func setInstagramHandle(adminToken : Text, handle : Text) : async () {
+    if (not isValidAdmin(adminToken)) { Runtime.trap("Unauthorized: Invalid admin code") };
+    instagramHandle := handle;
   };
 
   // ── Admin endpoints ──────────────────────────────────────────

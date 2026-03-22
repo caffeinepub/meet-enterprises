@@ -512,3 +512,19 @@ export function useDeleteReel() {
     },
   });
 }
+
+export function useInstagramHandle() {
+  const { actor } = useActor();
+  return useQuery<string>({
+    queryKey: ["instagramHandle"],
+    queryFn: async () => {
+      if (!actor) return "";
+      try {
+        return await actor.getInstagramHandle();
+      } catch {
+        return "";
+      }
+    },
+    enabled: !!actor,
+  });
+}

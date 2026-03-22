@@ -232,6 +232,9 @@ export interface backendInterface {
     getReels(): Promise<Array<Reel>>;
     generateDeliveryCode(adminToken: string, orderId: string): Promise<string>;
     verifyDeliveryCode(orderId: string, code: string): Promise<boolean>;
+    getInstagramHandle(): Promise<string>;
+    setInstagramHandle(adminToken: string, handle: string): Promise<void>;
+    getOrderDeliveryCode(orderId: string): Promise<string | null>;
 }
 import type { Order as _Order, PaymentSettings as _PaymentSettings, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -816,6 +819,46 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.verifyDeliveryCode(arg0, arg1);
             return result;
+        }
+    }
+    async getInstagramHandle(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getInstagramHandle();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error('unreachable');
+            }
+        } else {
+            const result = await this.actor.getInstagramHandle();
+            return result;
+        }
+    }
+    async setInstagramHandle(arg0: string, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                await this.actor.setInstagramHandle(arg0, arg1);
+            } catch (e) {
+                this.processError(e);
+                throw new Error('unreachable');
+            }
+        } else {
+            await this.actor.setInstagramHandle(arg0, arg1);
+        }
+    }
+    async getOrderDeliveryCode(arg0: string): Promise<string | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getOrderDeliveryCode(arg0);
+                return result.length === 0 ? null : result[0];
+            } catch (e) {
+                this.processError(e);
+                throw new Error('unreachable');
+            }
+        } else {
+            const result = await this.actor.getOrderDeliveryCode(arg0);
+            return result.length === 0 ? null : result[0];
         }
     }
 }
