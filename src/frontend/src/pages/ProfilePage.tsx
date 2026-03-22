@@ -117,7 +117,7 @@ function DeliveryCodeEntry({ orderId }: { orderId: string }) {
     setConfirming(true);
     try {
       if (!actor) throw new Error("Not connected");
-      const ok = await (actor as any).verifyDeliveryCode(orderId, code);
+      const ok = await actor.verifyDeliveryCode(orderId, code);
       if (ok) {
         toast.success("Delivery confirmed! Thank you.");
       } else {

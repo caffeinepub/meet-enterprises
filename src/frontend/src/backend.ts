@@ -231,6 +231,7 @@ export interface backendInterface {
     deleteReel(adminToken: string, id: bigint): Promise<void>;
     getReels(): Promise<Array<Reel>>;
     generateDeliveryCode(adminToken: string, orderId: string): Promise<string>;
+    verifyDeliveryCode(orderId: string, code: string): Promise<boolean>;
 }
 import type { Order as _Order, PaymentSettings as _PaymentSettings, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -800,6 +801,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.generateDeliveryCode(arg0, arg1);
+            return result;
+        }
+    }
+    async verifyDeliveryCode(arg0: string, arg1: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.verifyDeliveryCode(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.verifyDeliveryCode(arg0, arg1);
             return result;
         }
     }

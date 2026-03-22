@@ -156,5 +156,6 @@ export interface backendInterface {
     deleteReel(adminToken: string, id: bigint): Promise<void>;
     getReels(): Promise<Array<Reel>>;
     generateDeliveryCode(adminToken: string, orderId: string): Promise<string>;
+    verifyDeliveryCode(orderId: string, code: string): Promise<boolean>;
         createOrder(items: Array<OrderItem>, paymentMethod: string, deliveryLocation: string): Promise<Order>;
 }

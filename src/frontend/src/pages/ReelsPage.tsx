@@ -5,6 +5,44 @@ import { Play, ShoppingBag } from "lucide-react";
 import { Component, type ReactNode } from "react";
 import { useProducts, useReels } from "../hooks/useQueries";
 
+/** Convert any YouTube URL to an embeddable URL, return null if not YouTube */
+function getYouTubeEmbedUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    // youtube.com/watch?v=ID
+    if (
+      (u.hostname === "www.youtube.com" || u.hostname === "youtube.com") &&
+      u.pathname === "/watch"
+    ) {
+      const id = u.searchParams.get("v");
+      if (id) return `https://www.youtube.com/embed/${id}?autoplay=0&rel=0`;
+    }
+    // youtu.be/ID
+    if (u.hostname === "youtu.be") {
+      const id = u.pathname.replace("/", "");
+      if (id) return `https://www.youtube.com/embed/${id}?autoplay=0&rel=0`;
+    }
+    // youtube.com/shorts/ID
+    if (
+      (u.hostname === "www.youtube.com" || u.hostname === "youtube.com") &&
+      u.pathname.startsWith("/shorts/")
+    ) {
+      const id = u.pathname.replace("/shorts/", "");
+      if (id) return `https://www.youtube.com/embed/${id}?autoplay=0&rel=0`;
+    }
+    // already an embed URL
+    if (
+      (u.hostname === "www.youtube.com" || u.hostname === "youtube.com") &&
+      u.pathname.startsWith("/embed/")
+    ) {
+      return url;
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return null;
+}
+
 class ReelsErrorBoundary extends Component<
   { children: ReactNode },
   { hasError: boolean }
@@ -34,6 +72,35 @@ class ReelsErrorBoundary extends Component<
     }
     return this.props.children;
   }
+}
+
+function ReelVideo({ videoUrl }: { videoUrl: string }) {
+  const embedUrl = getYouTubeEmbedUrl(videoUrl);
+
+  if (embedUrl) {
+    return (
+      <iframe
+        src={embedUrl}
+        className="w-full h-full"
+        style={{ display: "block", border: "none" }}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
+        title="reel"
+      />
+    );
+  }
+
+  return (
+    <video
+      src={videoUrl}
+      controls
+      playsInline
+      muted
+      loop
+      className="w-full h-full object-cover"
+      style={{ display: "block" }}
+    />
+  );
 }
 
 function ReelsContent() {
@@ -85,15 +152,7 @@ function ReelsContent() {
                 data-ocid={`reels.item.${idx + 1}`}
               >
                 <div className="relative bg-black aspect-[9/16] max-h-[480px]">
-                  <video
-                    src={reel.videoUrl ?? ""}
-                    controls
-                    playsInline
-                    muted
-                    loop
-                    className="w-full h-full object-cover"
-                    style={{ display: "block" }}
-                  />
+                  <ReelVideo videoUrl={reel.videoUrl ?? ""} />
                 </div>
 
                 <div className="p-4">
