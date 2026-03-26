@@ -44,6 +44,10 @@ export interface Product {
   'image' : Uint8Array,
   'colours' : Array<string>,
 }
+export interface ProductImage {
+  'imageData' : Uint8Array,
+  'imageType' : string,
+}
 export interface ProductSummary {
   'id' : bigint,
   'mrp' : bigint,
@@ -151,6 +155,9 @@ export interface _SERVICE {
   'getOrderById' : ActorMethod<[string], [] | [Order]>,
   'getPaymentSettings' : ActorMethod<[], [] | [PaymentSettings]>,
   'getProductById' : ActorMethod<[bigint], Product>,
+  'getProductImages' : ActorMethod<[bigint], Array<ProductImage>>,
+  'addProductImage' : ActorMethod<[string, bigint, Uint8Array, string], bigint>,
+  'removeProductImage' : ActorMethod<[string, bigint, bigint], undefined>,
   'getProducts' : ActorMethod<[], Array<ProductSummary>>,
   'getSchemes' : ActorMethod<[], Array<Scheme>>,
   'getUserOrders' : ActorMethod<[Principal], Array<Order>>,

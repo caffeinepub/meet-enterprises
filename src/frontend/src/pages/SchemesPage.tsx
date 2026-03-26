@@ -1,12 +1,13 @@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Copy, Tag } from "lucide-react";
+import { Copy, Instagram, Tag } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
-import { useSchemes } from "../hooks/useQueries";
+import { useInstagramHandle, useSchemes } from "../hooks/useQueries";
 
 export function SchemesPage() {
   const { data: schemes, isLoading } = useSchemes();
+  const { data: instagramHandle } = useInstagramHandle();
 
   const copyCode = (code: string) => {
     navigator.clipboard.writeText(code).then(() => {
@@ -26,8 +27,43 @@ export function SchemesPage() {
         <p className="text-center text-muted-foreground text-sm mb-2">
           Exclusive deals and coupon codes just for you
         </p>
-        <div className="w-16 h-px bg-gold mx-auto mb-12" />
+        <div className="w-16 h-px bg-gold mx-auto mb-10" />
 
+        {/* Instagram Section */}
+        {instagramHandle && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="card-luxury p-5 flex items-center gap-4 mb-8"
+            data-ocid="schemes.instagram.card"
+          >
+            <div
+              className="p-3 rounded-full"
+              style={{
+                background:
+                  "linear-gradient(135deg, #f9ce34, #ee2a7b, #6228d7)",
+              }}
+            >
+              <Instagram className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs tracking-widest uppercase text-muted-foreground mb-0.5">
+                Follow Us on Instagram
+              </p>
+              <a
+                href={`https://www.instagram.com/${instagramHandle.replace(/^@/, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-gold hover:underline text-base"
+              >
+                @{instagramHandle.replace(/^@/, "")}
+              </a>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Schemes & Coupons */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((i) => (

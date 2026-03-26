@@ -2,7 +2,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowLeft, Heart, Minus, Plus, ShoppingCart, Tag } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  Minus,
+  Plus,
+  ShoppingCart,
+  Tag,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -11,6 +20,7 @@ import { useCart } from "../context/CartContext";
 import {
   useCategories,
   useProductById,
+  useProductImages,
   useProducts,
 } from "../hooks/useQueries";
 import { formatPrice, uint8ToDataUrl } from "../utils/imageUtils";
@@ -30,18 +40,44 @@ export function ProductDetailPage() {
 
   const { data: product, isLoading: productLoading } =
     useProductById(productIdBigInt);
+  const { data: images } = useProductImages(productIdBigInt);
   const { data: products } = useProducts();
   const { data: categories } = useCategories();
+
+  const [imgIndex, setImgIndex] = useState(0);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   const category = categories?.find((c) => c.id === product?.categoryId);
   const salePrice = product
     ? Number(product.mrp) - Number(product.discountAmount)
     : 0;
   const hasDiscount = product ? Number(product.discountAmount) > 0 : false;
-  const imgSrc =
-    product?.image && product.image.length > 0
+
+  const hasMultipleImages = images && images.length > 1;
+  const currentImage = images && images.length > 0 ? images[imgIndex] : null;
+  // Fall back to product.image if no images returned yet
+  const imgSrc = currentImage
+    ? uint8ToDataUrl(currentImage.imageData, currentImage.imageType)
+    : product?.image && product.image.length > 0
       ? uint8ToDataUrl(product.image, product.imageType)
       : null;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null || !images || images.length <= 1) return;
+    const delta = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(delta) > 50) {
+      if (delta < 0) {
+        setImgIndex((i) => Math.min(i + 1, images.length - 1));
+      } else {
+        setImgIndex((i) => Math.max(i - 1, 0));
+      }
+    }
+    setTouchStartX(null);
+  };
 
   const [selectedSize, setSelectedSize] = useState<string | undefined>(
     undefined,
@@ -150,24 +186,74 @@ export function ProductDetailPage() {
       </button>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-        {/* Image */}
+        {/* Image Gallery */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="relative aspect-[3/4] overflow-hidden rounded-xl bg-secondary"
+          className="relative aspect-[3/4] overflow-hidden rounded-xl bg-secondary select-none"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           {imgSrc ? (
             <img
               src={imgSrc}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-opacity duration-300"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Tag className="w-20 h-20 text-muted-foreground/30" />
             </div>
           )}
+
+          {/* Left/Right arrows (visible on hover) */}
+          {hasMultipleImages && (
+            <>
+              <button
+                type="button"
+                onClick={() => setImgIndex((i) => Math.max(i - 1, 0))}
+                disabled={imgIndex === 0}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/70 flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity disabled:opacity-20"
+                data-ocid="product_detail.gallery_prev.button"
+              >
+                <ChevronLeft className="w-4 h-4 text-foreground" />
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setImgIndex((i) => Math.min(i + 1, images.length - 1))
+                }
+                disabled={imgIndex === images.length - 1}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/70 flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity disabled:opacity-20"
+                data-ocid="product_detail.gallery_next.button"
+              >
+                <ChevronRight className="w-4 h-4 text-foreground" />
+              </button>
+            </>
+          )}
+
+          {/* Dot indicators */}
+          {hasMultipleImages && (
+            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+              {images.map((img, i) => (
+                <button
+                  key={`dot-${i}-${img.imageType}`}
+                  type="button"
+                  onClick={() => setImgIndex(i)}
+                  className="w-2 h-2 rounded-full transition-all"
+                  style={{
+                    background:
+                      i === imgIndex
+                        ? "oklch(0.78 0.13 85)"
+                        : "oklch(0.78 0.13 85 / 0.35)",
+                    transform: i === imgIndex ? "scale(1.2)" : "scale(1)",
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
           {!product.inStock && (
             <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
               <Badge className="bg-destructive text-destructive-foreground text-base px-4 py-2">

@@ -53,6 +53,10 @@ export const Product = IDL.Record({
   'image' : IDL.Vec(IDL.Nat8),
   'colours' : IDL.Vec(IDL.Text),
 });
+export const ProductImage = IDL.Record({
+  'imageData' : IDL.Vec(IDL.Nat8),
+  'imageType' : IDL.Text,
+});
 // Lightweight summary returned by getProducts(), createProduct(), updateProduct()
 export const ProductSummary = IDL.Record({
   'id' : IDL.Nat,
@@ -172,6 +176,9 @@ export const idlService = IDL.Service({
   'getOrderById' : IDL.Func([IDL.Text], [IDL.Opt(Order)], ['query']),
   'getPaymentSettings' : IDL.Func([], [IDL.Opt(PaymentSettings)], ['query']),
   'getProductById' : IDL.Func([IDL.Nat], [Product], ['query']),
+  'getProductImages' : IDL.Func([IDL.Nat], [IDL.Vec(ProductImage)], ['query']),
+  'addProductImage' : IDL.Func([IDL.Text, IDL.Nat, IDL.Vec(IDL.Nat8), IDL.Text], [IDL.Nat], []),
+  'removeProductImage' : IDL.Func([IDL.Text, IDL.Nat, IDL.Nat], [], []),
   'getProducts' : IDL.Func([], [IDL.Vec(ProductSummary)], ['query']),
   'getSchemes' : IDL.Func([], [IDL.Vec(Scheme)], ['query']),
   'getUserOrders' : IDL.Func([IDL.Principal], [IDL.Vec(Order)], ['query']),
@@ -180,7 +187,11 @@ export const idlService = IDL.Service({
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
-  'getUserVouchers' : IDL.Func([IDL.Principal], [IDL.Vec(Voucher)], ['query']),
+  'getUserVouchers' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Vec(Voucher)],
+      ['query'],
+    ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'setPaymentSettings' : IDL.Func(
@@ -225,8 +236,6 @@ export const idlService = IDL.Service({
   'setTheme' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'verifyDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
 });
-
-export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
   const _CaffeineStorageCreateCertificateResult = IDL.Record({
@@ -273,6 +282,10 @@ export const idlFactory = ({ IDL }) => {
     'sizes' : IDL.Vec(IDL.Text),
     'image' : IDL.Vec(IDL.Nat8),
     'colours' : IDL.Vec(IDL.Text),
+  });
+  const ProductImage = IDL.Record({
+    'imageData' : IDL.Vec(IDL.Nat8),
+    'imageType' : IDL.Text,
   });
   const ProductSummary = IDL.Record({
     'id' : IDL.Nat,
@@ -390,6 +403,9 @@ export const idlFactory = ({ IDL }) => {
     'getOrderById' : IDL.Func([IDL.Text], [IDL.Opt(Order)], ['query']),
     'getPaymentSettings' : IDL.Func([], [IDL.Opt(PaymentSettings)], ['query']),
     'getProductById' : IDL.Func([IDL.Nat], [Product], ['query']),
+    'getProductImages' : IDL.Func([IDL.Nat], [IDL.Vec(ProductImage)], ['query']),
+    'addProductImage' : IDL.Func([IDL.Text, IDL.Nat, IDL.Vec(IDL.Nat8), IDL.Text], [IDL.Nat], []),
+    'removeProductImage' : IDL.Func([IDL.Text, IDL.Nat, IDL.Nat], [], []),
     'getProducts' : IDL.Func([], [IDL.Vec(ProductSummary)], ['query']),
     'getSchemes' : IDL.Func([], [IDL.Vec(Scheme)], ['query']),
     'getUserOrders' : IDL.Func([IDL.Principal], [IDL.Vec(Order)], ['query']),

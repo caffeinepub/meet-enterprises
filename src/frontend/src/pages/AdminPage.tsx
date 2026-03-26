@@ -33,8 +33,10 @@ import {
   Check,
   Edit2,
   Gift,
+  ImagePlus,
   Instagram,
   Key,
+  Loader2,
   MapPin,
   Package,
   Palette,
@@ -46,6 +48,7 @@ import {
   Trash2,
   Upload,
   Users,
+  X,
 } from "lucide-react";
 import { motion } from "motion/react";
 import type React from "react";
@@ -54,6 +57,7 @@ import { toast } from "sonner";
 import type { Reel } from "../backend.d";
 import { useActor } from "../hooks/useActor";
 import {
+  useAddProductImage,
   useAllOrders,
   useAllUsers,
   useCategories,
@@ -66,8 +70,10 @@ import {
   useDeleteReel,
   useDeleteScheme,
   usePaymentSettings,
+  useProductImages,
   useProducts,
   useReels,
+  useRemoveProductImage,
   useSchemes,
   useSetPaymentSettings,
   useUpdateCategory,
@@ -537,6 +543,14 @@ function ProductsTab() {
   const [sizeInput, setSizeInput] = useState("");
   const [colourInput, setColourInput] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const addImageRef = useRef<HTMLInputElement>(null);
+  const bulkFileRef = useRef<HTMLInputElement>(null);
+  const [addImagePending, setAddImagePending] = useState(false);
+
+  const addProductImage = useAddProductImage();
+  const removeProductImage = useRemoveProductImage();
+  const { data: productImages, isLoading: imagesLoading } =
+    useProductImages(editingId);
 
   const resetForm = () => {
     setForm(DEFAULT_FORM);
@@ -621,12 +635,14 @@ function ProductsTab() {
       if (editingId !== null) {
         await updateProduct.mutateAsync({ id: editingId, info });
         toast.success("Product updated");
+        setDialogOpen(false);
+        resetForm();
       } else {
-        await createProduct.mutateAsync(info);
-        toast.success("Product created");
+        const newProduct = await createProduct.mutateAsync(info);
+        toast.success("Product created! You can now add more images below.");
+        // Switch to edit mode so additional images section appears
+        setEditingId(newProduct.id);
       }
-      setDialogOpen(false);
-      resetForm();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Operation failed");
     }
@@ -839,16 +855,55 @@ function ProductsTab() {
                   className="hidden"
                   onChange={handleImageChange}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="mt-1 w-full border-gold-border text-muted-foreground hover:text-gold"
-                  onClick={() => fileRef.current?.click()}
-                  data-ocid="admin.product.image.upload_button"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  {form.image ? "Image Selected" : "Upload Image"}
-                </Button>
+                <input
+                  ref={bulkFileRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files || []);
+                    if (!files.length) return;
+                    try {
+                      const result = await fileToUint8Array(files[0]);
+                      setForm((f) => ({
+                        ...f,
+                        image: result.bytes,
+                        imageType: result.type || "image/jpeg",
+                      }));
+                      toast.success(
+                        `${files.length} image(s) ready. Save product first, then add bulk images via Manage Images.`,
+                      );
+                    } catch {
+                      toast.error(
+                        "Could not load image. Please try a JPG or PNG file.",
+                      );
+                    }
+                    if (bulkFileRef.current) bulkFileRef.current.value = "";
+                  }}
+                />
+                <div className="mt-1 flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1 border-gold-border text-muted-foreground hover:text-gold"
+                    onClick={() => fileRef.current?.click()}
+                    data-ocid="admin.product.image.upload_button"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {form.image ? "Selected" : "Upload Image"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1 border-gold/50 text-gold/70 hover:text-gold hover:border-gold"
+                    onClick={() => bulkFileRef.current?.click()}
+                    data-ocid="admin.product.bulk_image.upload_button"
+                  >
+                    <ImagePlus className="w-4 h-4 mr-2" />
+                    Bulk Image
+                  </Button>
+                </div>
               </div>
               <Button
                 className="btn-gold tracking-widest uppercase"
@@ -863,6 +918,136 @@ function ProductsTab() {
                     : "Create"}
               </Button>
             </div>
+
+            {/* Additional Images Section - only shown when editing an existing product */}
+            {editingId !== null && (
+              <>
+                <div className="border-t border-gold-border pt-4 mt-2">
+                  <Label className="text-xs tracking-widest uppercase text-muted-foreground block mb-3">
+                    Additional Images ({productImages?.length ?? 0}/7)
+                  </Label>
+                  {imagesLoading ? (
+                    <div className="flex gap-2 flex-wrap">
+                      {[1, 2].map((i) => (
+                        <div
+                          key={i}
+                          className="w-16 h-16 rounded bg-secondary animate-pulse"
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex gap-2 flex-wrap">
+                      {productImages?.map((img, i) => (
+                        <div
+                          key={`${img.imageType}-${i}`}
+                          className="relative group/thumb"
+                        >
+                          <img
+                            src={uint8ToDataUrl(img.imageData, img.imageType)}
+                            alt={`Thumbnail ${i + 1}`}
+                            className="w-16 h-16 object-cover rounded border border-gold-border/50"
+                          />
+                          {i > 0 && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await removeProductImage.mutateAsync({
+                                    productId: editingId,
+                                    imageIndex: BigInt(i),
+                                  });
+                                  toast.success("Image removed");
+                                } catch {
+                                  toast.error("Failed to remove image");
+                                }
+                              }}
+                              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-destructive flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity"
+                              data-ocid="admin.product.image.delete_button"
+                            >
+                              <X className="w-2.5 h-2.5 text-white" />
+                            </button>
+                          )}
+                          {i === 0 && (
+                            <span className="absolute bottom-0 left-0 right-0 text-[9px] text-center bg-background/80 text-gold-muted rounded-b">
+                              Primary
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                      {(productImages?.length ?? 0) < 7 && (
+                        <>
+                          <input
+                            ref={addImageRef}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={async (e) => {
+                              const files = Array.from(e.target.files || []);
+                              if (files.length === 0) return;
+                              const currentCount = productImages?.length ?? 0;
+                              const remaining = 7 - currentCount;
+                              const toUpload = files.slice(0, remaining);
+                              setAddImagePending(true);
+                              try {
+                                for (const file of toUpload) {
+                                  const result = await fileToUint8Array(file);
+                                  await addProductImage.mutateAsync({
+                                    productId: editingId,
+                                    imageData: result.bytes,
+                                    imageType: result.type || "image/jpeg",
+                                  });
+                                }
+                                toast.success(
+                                  toUpload.length > 1
+                                    ? `${toUpload.length} images added`
+                                    : "Image added",
+                                );
+                              } catch {
+                                toast.error("Failed to add image");
+                              } finally {
+                                setAddImagePending(false);
+                                if (addImageRef.current)
+                                  addImageRef.current.value = "";
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => addImageRef.current?.click()}
+                            disabled={addImagePending}
+                            className="w-16 h-16 rounded border border-dashed border-gold-border/50 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-gold hover:text-gold transition-colors disabled:opacity-50"
+                            data-ocid="admin.product.addimage.upload_button"
+                          >
+                            {addImagePending ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <ImagePlus className="w-4 h-4" />
+                            )}
+                            <span className="text-[9px]">Add</span>
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3">
+                  <Button
+                    type="button"
+                    className="w-full btn-gold tracking-widest uppercase text-xs"
+                    onClick={() => {
+                      if (editingId !== null) {
+                        window.location.href = `/admin/product-images/${editingId}`;
+                      }
+                    }}
+                    data-ocid="admin.product.manage_images.button"
+                  >
+                    <ImagePlus className="w-4 h-4 mr-2" />
+                    Manage Images (Unlimited)
+                  </Button>
+                </div>
+              </>
+            )}
           </DialogContent>
         </Dialog>
       </div>

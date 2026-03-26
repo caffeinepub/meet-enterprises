@@ -15,13 +15,13 @@ import { Navbar } from "./components/Navbar";
 import { SplashScreen } from "./components/SplashScreen";
 import { CartProvider } from "./context/CartContext";
 import { AdminPage } from "./pages/AdminPage";
+import { AdminProductImagesPage } from "./pages/AdminProductImagesPage";
 import { CartPage } from "./pages/CartPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { HomePage } from "./pages/HomePage";
 import { ProductDetailPage } from "./pages/ProductDetailPage";
 import { ProfilePage } from "./pages/ProfilePage";
-import { ReelsPage } from "./pages/ReelsPage";
 import { SchemesPage } from "./pages/SchemesPage";
 import { ShopPage } from "./pages/ShopPage";
 import { SupportFAQPage } from "./pages/SupportFAQPage";
@@ -102,10 +102,13 @@ const profileRoute = createRoute({
   path: "/profile",
   component: ProfilePage,
 });
-const reelsRoute = createRoute({
+const adminProductImagesRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/reels",
-  component: ReelsPage,
+  path: "/admin/product-images/$productId",
+  component: () => {
+    const { productId } = adminProductImagesRoute.useParams();
+    return <AdminProductImagesPage productId={productId} />;
+  },
 });
 const categoriesRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -123,8 +126,8 @@ const routeTree = rootRoute.addChildren([
   supportRoute,
   productRoute,
   profileRoute,
-  reelsRoute,
   categoriesRoute,
+  adminProductImagesRoute,
 ]);
 const router = createRouter({ routeTree, scrollRestoration: false });
 

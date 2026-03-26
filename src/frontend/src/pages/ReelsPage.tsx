@@ -414,7 +414,9 @@ function ReelsContent() {
     actor
       .getInstagramHandle()
       .then((h: string) => setInstagramHandle(h))
-      .catch(() => {});
+      .catch((err: unknown) => {
+        console.warn("Could not fetch Instagram handle:", err);
+      });
   }, [actor]);
 
   // Track which reel is in view via IntersectionObserver

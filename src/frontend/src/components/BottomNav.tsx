@@ -1,11 +1,11 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { Grid3X3, Home, Play, User } from "lucide-react";
+import { Grid3X3, Home, Tag, User } from "lucide-react";
 import { motion } from "motion/react";
 
 const NAV_ITEMS = [
   { path: "/", icon: Home, label: "Home" },
   { path: "/categories", icon: Grid3X3, label: "Categories" },
-  { path: "/reels", icon: Play, label: "Reels" },
+  { path: "/schemes", icon: Tag, label: "Schemes" },
   { path: "/profile", icon: User, label: "Profile" },
 ];
 

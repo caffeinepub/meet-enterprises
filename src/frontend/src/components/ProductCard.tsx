@@ -7,7 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import type { Category, ProductSummary } from "../backend.d";
 import { useCart } from "../context/CartContext";
-import { useProductById, useProductRating } from "../hooks/useQueries";
+import { useProductImages, useProductRating } from "../hooks/useQueries";
 import { formatPrice, uint8ToDataUrl } from "../utils/imageUtils";
 import { ProductOptionsModal } from "./ProductOptionsModal";
 
@@ -65,23 +65,27 @@ export function ProductCard({
   const [wishlisted, setWishlisted] = useState(() =>
     getWishlist().includes(product.id.toString()),
   );
-  const { data: fullProduct } = useProductById(product.id);
+  const [imgIndex, setImgIndex] = useState(0);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+
+  const { data: images } = useProductImages(product.id);
   const { data: ratingData } = useProductRating(product.id);
 
   const category = categories?.find((c) => c.id === product.categoryId);
   const salePrice = Number(product.mrp) - Number(product.discountAmount);
   const hasDiscount = Number(product.discountAmount) > 0;
-  const hasOptions =
-    (product.sizes && product.sizes.length > 0) ||
-    (product.colours && product.colours.length > 0);
 
-  const imgSrc =
-    fullProduct?.image && fullProduct.image.length > 0
-      ? uint8ToDataUrl(fullProduct.image, fullProduct.imageType)
-      : null;
+  const hasMultipleImages = images && images.length > 1;
+  const currentImage = images && images.length > 0 ? images[imgIndex] : null;
+  const imgSrc = currentImage
+    ? uint8ToDataUrl(currentImage.imageData, currentImage.imageType)
+    : null;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
+    const hasOptions =
+      (product.sizes && product.sizes.length > 0) ||
+      (product.colours && product.colours.length > 0);
     if (hasOptions) {
       setModalOpen(true);
     } else {
@@ -106,6 +110,23 @@ export function ProductCard({
     });
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null || !images || images.length <= 1) return;
+    const delta = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(delta) > 50) {
+      if (delta < 0) {
+        setImgIndex((i) => Math.min(i + 1, images.length - 1));
+      } else {
+        setImgIndex((i) => Math.max(i - 1, 0));
+      }
+    }
+    setTouchStartX(null);
+  };
+
   return (
     <>
       <motion.div
@@ -116,7 +137,11 @@ export function ProductCard({
         onClick={handleCardClick}
         data-ocid={`product.item.${index + 1}`}
       >
-        <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
+        <div
+          className="relative aspect-[3/4] overflow-hidden bg-secondary"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           {imgSrc ? (
             <img
               src={imgSrc}
@@ -139,6 +164,28 @@ export function ProductCard({
             <Badge className="absolute top-2 right-2 bg-gold text-background text-xs">
               SALE
             </Badge>
+          )}
+          {/* Dot indicators */}
+          {hasMultipleImages && (
+            <div className="absolute bottom-1.5 left-0 right-0 flex justify-center gap-1">
+              {images.map((img, i) => (
+                <button
+                  key={`dot-${i}-${img.imageType}`}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setImgIndex(i);
+                  }}
+                  className="w-1.5 h-1.5 rounded-full transition-all"
+                  style={{
+                    background:
+                      i === imgIndex
+                        ? "oklch(0.78 0.13 85)"
+                        : "oklch(0.78 0.13 85 / 0.35)",
+                  }}
+                />
+              ))}
+            </div>
           )}
         </div>
 

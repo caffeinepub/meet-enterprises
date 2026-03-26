@@ -158,11 +158,7 @@ export function useReels() {
     queryKey: ["reels"],
     queryFn: async () => {
       if (!actor) return [];
-      try {
-        return await actor.getReels();
-      } catch {
-        return [];
-      }
+      return await actor.getReels();
     },
     enabled: !!actor,
   });
@@ -526,5 +522,71 @@ export function useInstagramHandle() {
       }
     },
     enabled: !!actor,
+  });
+}
+
+export interface ProductImage {
+  imageData: Uint8Array;
+  imageType: string;
+}
+
+export function useProductImages(productId: bigint | null) {
+  const { actor } = useActor();
+  return useQuery<ProductImage[]>({
+    queryKey: ["productImages", productId?.toString()],
+    queryFn: async () => {
+      if (!actor || productId == null) return [];
+      try {
+        return await (actor as any).getProductImages(productId);
+      } catch {
+        return [];
+      }
+    },
+    enabled: !!actor && productId != null,
+  });
+}
+
+export function useAddProductImage() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  type AddImageVars = {
+    productId: bigint;
+    imageData: Uint8Array;
+    imageType: string;
+  };
+  return useMutation<unknown, Error, AddImageVars>({
+    mutationFn: async ({ productId, imageData, imageType }: AddImageVars) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return (actor as any).addProductImage(
+        token,
+        productId,
+        imageData,
+        imageType,
+      );
+    },
+    onSuccess: (_: unknown, { productId }: AddImageVars) => {
+      qc.invalidateQueries({
+        queryKey: ["productImages", productId.toString()],
+      });
+    },
+  });
+}
+
+export function useRemoveProductImage() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  type RemoveImageVars = { productId: bigint; imageIndex: bigint };
+  return useMutation<unknown, Error, RemoveImageVars>({
+    mutationFn: async ({ productId, imageIndex }: RemoveImageVars) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return (actor as any).removeProductImage(token, productId, imageIndex);
+    },
+    onSuccess: (_: unknown, { productId }: RemoveImageVars) => {
+      qc.invalidateQueries({
+        queryKey: ["productImages", productId.toString()],
+      });
+    },
   });
 }
