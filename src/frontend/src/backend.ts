@@ -235,6 +235,9 @@ export interface backendInterface {
     getInstagramHandle(): Promise<string>;
     setInstagramHandle(adminToken: string, handle: string): Promise<void>;
     getOrderDeliveryCode(orderId: string): Promise<string | null>;
+    getProductImages(productId: bigint): Promise<Array<{imageData: Uint8Array; imageType: string}>>;
+    addProductImage(adminToken: string, productId: bigint, imageData: Uint8Array, imageType: string): Promise<bigint>;
+    removeProductImage(adminToken: string, productId: bigint, imageIndex: bigint): Promise<void>;
 }
 import type { Order as _Order, PaymentSettings as _PaymentSettings, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -859,6 +862,46 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.getOrderDeliveryCode(arg0);
             return result.length === 0 ? null : result[0];
+        }
+    }
+    async getProductImages(arg0: bigint): Promise<Array<{imageData: Uint8Array; imageType: string}>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getProductImages(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getProductImages(arg0);
+            return result;
+        }
+    }
+    async addProductImage(arg0: string, arg1: bigint, arg2: Uint8Array, arg3: string): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addProductImage(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addProductImage(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async removeProductImage(arg0: string, arg1: bigint, arg2: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                await this.actor.removeProductImage(arg0, arg1, arg2);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            await this.actor.removeProductImage(arg0, arg1, arg2);
         }
     }
 }

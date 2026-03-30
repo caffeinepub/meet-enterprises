@@ -546,6 +546,9 @@ function ProductsTab() {
   const addImageRef = useRef<HTMLInputElement>(null);
   const bulkFileRef = useRef<HTMLInputElement>(null);
   const [addImagePending, setAddImagePending] = useState(false);
+  const [pendingBulkImages, setPendingBulkImages] = useState<
+    Array<{ bytes: Uint8Array; type: string }>
+  >([]);
 
   const addProductImage = useAddProductImage();
   const removeProductImage = useRemoveProductImage();
@@ -553,6 +556,7 @@ function ProductsTab() {
     useProductImages(editingId);
 
   const resetForm = () => {
+    setPendingBulkImages([]);
     setForm(DEFAULT_FORM);
     setEditingId(null);
     setSizeInput("");
@@ -639,7 +643,30 @@ function ProductsTab() {
         resetForm();
       } else {
         const newProduct = await createProduct.mutateAsync(info);
-        toast.success("Product created! You can now add more images below.");
+        // Upload any pending bulk images
+        if (pendingBulkImages.length > 0) {
+          toast.success(
+            `Product created! Uploading ${pendingBulkImages.length} additional image(s)...`,
+          );
+          const token = getAdminToken();
+          if (token) {
+            for (const img of pendingBulkImages) {
+              try {
+                await addProductImage.mutateAsync({
+                  productId: newProduct.id,
+                  imageData: img.bytes,
+                  imageType: img.type || "image/jpeg",
+                });
+              } catch {
+                /* continue */
+              }
+            }
+          }
+          setPendingBulkImages([]);
+          toast.success("All images uploaded!");
+        } else {
+          toast.success("Product created! You can now add more images below.");
+        }
         // Switch to edit mode so additional images section appears
         setEditingId(newProduct.id);
       }
@@ -871,9 +898,22 @@ function ProductsTab() {
                         image: result.bytes,
                         imageType: result.type || "image/jpeg",
                       }));
-                      toast.success(
-                        `${files.length} image(s) ready. Save product first, then add bulk images via Manage Images.`,
-                      );
+                      if (files.length > 1) {
+                        const additional = await Promise.all(
+                          files.slice(1).map((file) => fileToUint8Array(file)),
+                        );
+                        setPendingBulkImages(
+                          additional.map((r) => ({
+                            bytes: r.bytes,
+                            type: r.type || "image/jpeg",
+                          })),
+                        );
+                        toast.success(
+                          `1 primary + ${files.length - 1} additional image(s) queued. Save to upload all.`,
+                        );
+                      } else {
+                        toast.success("1 image ready. Save product to upload.");
+                      }
                     } catch {
                       toast.error(
                         "Could not load image. Please try a JPG or PNG file.",
@@ -924,7 +964,7 @@ function ProductsTab() {
               <>
                 <div className="border-t border-gold-border pt-4 mt-2">
                   <Label className="text-xs tracking-widest uppercase text-muted-foreground block mb-3">
-                    Additional Images ({productImages?.length ?? 0}/7)
+                    Additional Images ({productImages?.length ?? 0} total)
                   </Label>
                   {imagesLoading ? (
                     <div className="flex gap-2 flex-wrap">
@@ -974,7 +1014,7 @@ function ProductsTab() {
                           )}
                         </div>
                       ))}
-                      {(productImages?.length ?? 0) < 7 && (
+                      {true && (
                         <>
                           <input
                             ref={addImageRef}
@@ -1051,7 +1091,6 @@ function ProductsTab() {
           </DialogContent>
         </Dialog>
       </div>
-
       {isLoading ? (
         <Skeleton className="h-48 w-full" />
       ) : (

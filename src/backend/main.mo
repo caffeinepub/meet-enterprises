@@ -408,7 +408,6 @@ actor {
     if (not products.containsKey(productId)) { Runtime.trap("Product not found") };
     let current = switch (additionalImages.get(productId)) { case (?imgs) imgs; case null [] };
     // Max 6 additional images (7 total including primary)
-    if (current.size() >= 6) { Runtime.trap("Maximum 7 images per product") };
     let newList = List.empty<ProductImage>();
     for (img in current.vals()) { newList.add(img) };
     newList.add({ imageData; imageType });

@@ -537,7 +537,7 @@ export function useProductImages(productId: bigint | null) {
     queryFn: async () => {
       if (!actor || productId == null) return [];
       try {
-        return await (actor as any).getProductImages(productId);
+        return await actor.getProductImages(productId);
       } catch {
         return [];
       }
@@ -558,12 +558,7 @@ export function useAddProductImage() {
     mutationFn: async ({ productId, imageData, imageType }: AddImageVars) => {
       requireActor(actor);
       const token = requireAdminToken();
-      return (actor as any).addProductImage(
-        token,
-        productId,
-        imageData,
-        imageType,
-      );
+      return actor.addProductImage(token, productId, imageData, imageType);
     },
     onSuccess: (_: unknown, { productId }: AddImageVars) => {
       qc.invalidateQueries({
@@ -581,7 +576,7 @@ export function useRemoveProductImage() {
     mutationFn: async ({ productId, imageIndex }: RemoveImageVars) => {
       requireActor(actor);
       const token = requireAdminToken();
-      return (actor as any).removeProductImage(token, productId, imageIndex);
+      return actor.removeProductImage(token, productId, imageIndex);
     },
     onSuccess: (_: unknown, { productId }: RemoveImageVars) => {
       qc.invalidateQueries({

@@ -166,6 +166,9 @@ export interface backendInterface {
     deleteReel(adminToken: string, id: bigint): Promise<void>;
     getReels(): Promise<Array<Reel>>;
     generateDeliveryCode(adminToken: string, orderId: string): Promise<string>;
+    getProductImages(productId: bigint): Promise<Array<{imageData: Uint8Array; imageType: string}>>;
+    addProductImage(adminToken: string, productId: bigint, imageData: Uint8Array, imageType: string): Promise<bigint>;
+    removeProductImage(adminToken: string, productId: bigint, imageIndex: bigint): Promise<void>;
     verifyDeliveryCode(orderId: string, code: string): Promise<boolean>;
     getOrderDeliveryCode(orderId: string): Promise<string | null>;
     createOrder(items: Array<OrderItem>, paymentMethod: string, deliveryLocation: string): Promise<Order>;

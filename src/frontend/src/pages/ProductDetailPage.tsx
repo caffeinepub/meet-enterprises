@@ -54,13 +54,6 @@ export function ProductDetailPage() {
   const hasDiscount = product ? Number(product.discountAmount) > 0 : false;
 
   const hasMultipleImages = images && images.length > 1;
-  const currentImage = images && images.length > 0 ? images[imgIndex] : null;
-  // Fall back to product.image if no images returned yet
-  const imgSrc = currentImage
-    ? uint8ToDataUrl(currentImage.imageData, currentImage.imageType)
-    : product?.image && product.image.length > 0
-      ? uint8ToDataUrl(product.image, product.imageType)
-      : null;
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStartX(e.touches[0].clientX);
@@ -193,13 +186,41 @@ export function ProductDetailPage() {
           transition={{ duration: 0.5 }}
           className="relative aspect-[3/4] overflow-hidden rounded-xl bg-secondary select-none"
           onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
+          onTouchEnd={(e) => {
+            handleTouchEnd(e);
+          }}
+          onTouchMove={(e) => {
+            if (images && images.length > 1) e.preventDefault();
+          }}
         >
-          {imgSrc ? (
+          {images && images.length > 0 ? (
+            <div
+              className="flex h-full"
+              style={{
+                width: `${images.length * 100}%`,
+                transform: `translateX(-${imgIndex * (100 / images.length)}%)`,
+                transition: "transform 0.3s ease",
+              }}
+            >
+              {images.map((img, i) => (
+                <div
+                  key={`${img.imageType}-${i}`}
+                  style={{ width: `${100 / images.length}%` }}
+                  className="h-full flex-shrink-0"
+                >
+                  <img
+                    src={uint8ToDataUrl(img.imageData, img.imageType)}
+                    alt={`${product.name} ${i + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : product?.image && product.image.length > 0 ? (
             <img
-              src={imgSrc}
+              src={uint8ToDataUrl(product.image, product.imageType)}
               alt={product.name}
-              className="w-full h-full object-cover transition-opacity duration-300"
+              className="w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
@@ -214,7 +235,7 @@ export function ProductDetailPage() {
                 type="button"
                 onClick={() => setImgIndex((i) => Math.max(i - 1, 0))}
                 disabled={imgIndex === 0}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/70 flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity disabled:opacity-20"
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/70 flex items-center justify-center transition-opacity disabled:opacity-20"
                 data-ocid="product_detail.gallery_prev.button"
               >
                 <ChevronLeft className="w-4 h-4 text-foreground" />
@@ -225,7 +246,7 @@ export function ProductDetailPage() {
                   setImgIndex((i) => Math.min(i + 1, images.length - 1))
                 }
                 disabled={imgIndex === images.length - 1}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/70 flex items-center justify-center opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity disabled:opacity-20"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/70 flex items-center justify-center transition-opacity disabled:opacity-20"
                 data-ocid="product_detail.gallery_next.button"
               >
                 <ChevronRight className="w-4 h-4 text-foreground" />

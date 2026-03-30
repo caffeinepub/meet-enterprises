@@ -76,10 +76,6 @@ export function ProductCard({
   const hasDiscount = Number(product.discountAmount) > 0;
 
   const hasMultipleImages = images && images.length > 1;
-  const currentImage = images && images.length > 0 ? images[imgIndex] : null;
-  const imgSrc = currentImage
-    ? uint8ToDataUrl(currentImage.imageData, currentImage.imageType)
-    : null;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -141,13 +137,33 @@ export function ProductCard({
           className="relative aspect-[3/4] overflow-hidden bg-secondary"
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
+          onTouchMove={(e) => {
+            if (images && images.length > 1) e.preventDefault();
+          }}
         >
-          {imgSrc ? (
-            <img
-              src={imgSrc}
-              alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
+          {images && images.length > 0 ? (
+            <div
+              className="flex h-full"
+              style={{
+                width: `${images.length * 100}%`,
+                transform: `translateX(-${imgIndex * (100 / images.length)}%)`,
+                transition: "transform 0.3s ease",
+              }}
+            >
+              {images.map((img, i) => (
+                <div
+                  key={`${img.imageType}-${i}`}
+                  style={{ width: `${100 / images.length}%` }}
+                  className="h-full flex-shrink-0"
+                >
+                  <img
+                    src={uint8ToDataUrl(img.imageData, img.imageType)}
+                    alt={`${product.name} ${i + 1}`}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Tag className="w-12 h-12 text-muted-foreground/30" />
