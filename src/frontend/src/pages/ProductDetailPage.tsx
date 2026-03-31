@@ -13,7 +13,7 @@ import {
   Tag,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ProductCard } from "../components/ProductCard";
 import { useCart } from "../context/CartContext";
@@ -79,6 +79,12 @@ export function ProductDetailPage() {
     undefined,
   );
   const [quantity, setQuantity] = useState(1);
+
+  // Scroll to top when product page mounts (component is re-created per URL)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [productId]);
 
   const [wishlisted, setWishlisted] = useState<boolean>(() => {
     const list: string[] = JSON.parse(
@@ -212,6 +218,7 @@ export function ProductDetailPage() {
                     src={uint8ToDataUrl(img.imageData, img.imageType)}
                     alt={`${product.name} ${i + 1}`}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 </div>
               ))}
@@ -221,6 +228,7 @@ export function ProductDetailPage() {
               src={uint8ToDataUrl(product.image, product.imageType)}
               alt={product.name}
               className="w-full h-full object-cover"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">

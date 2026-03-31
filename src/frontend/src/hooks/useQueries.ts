@@ -35,6 +35,7 @@ export function useCategories() {
     queryKey: ["categories"],
     queryFn: async () => (actor ? actor.getCategories() : []),
     enabled: !!actor,
+    staleTime: 10 * 60 * 1000, // 10 min – categories rarely change
   });
 }
 
@@ -54,6 +55,8 @@ export function useProducts() {
     },
     enabled: !!actor,
     retry: 2,
+    staleTime: 5 * 60 * 1000, // 5 min – avoid re-fetching on every page visit
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -147,6 +150,7 @@ export function useSchemes() {
     queryKey: ["schemes"],
     queryFn: async () => (actor ? actor.getSchemes() : []),
     enabled: !!actor,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -184,6 +188,7 @@ export function useProductRating(productId: bigint | null) {
       }
     },
     enabled: productId != null,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -543,6 +548,8 @@ export function useProductImages(productId: bigint | null) {
       }
     },
     enabled: !!actor && productId != null,
+    staleTime: 5 * 60 * 1000, // 5 min – images rarely change; prevents per-card refetch
+    gcTime: 15 * 60 * 1000,
   });
 }
 

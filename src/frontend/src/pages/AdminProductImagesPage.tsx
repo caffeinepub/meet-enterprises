@@ -28,6 +28,7 @@ export function AdminProductImagesPage({ productId }: Props) {
   const singleRef = useRef<HTMLInputElement>(null);
   const bulkRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
 
   if (!adminToken) {
     window.location.href = "/admin";
@@ -44,7 +45,13 @@ export function AdminProductImagesPage({ productId }: Props) {
     setUploading(true);
     let success = 0;
     let failed = 0;
-    for (const file of files) {
+    for (let idx = 0; idx < files.length; idx++) {
+      const file = files[idx];
+      setUploadStatus(
+        files.length > 1
+          ? `Compressing & uploading ${idx + 1} of ${files.length}...`
+          : "Compressing & uploading...",
+      );
       try {
         const result = await fileToUint8Array(file);
         await addProductImage.mutateAsync({
@@ -58,6 +65,7 @@ export function AdminProductImagesPage({ productId }: Props) {
       }
     }
     setUploading(false);
+    setUploadStatus("");
     if (success > 0) toast.success(`${success} image(s) uploaded`);
     if (failed > 0) toast.error(`${failed} image(s) failed`);
     if (singleRef.current) singleRef.current.value = "";
@@ -142,7 +150,7 @@ export function AdminProductImagesPage({ productId }: Props) {
             className="text-xs text-gold-muted mt-2 text-center animate-pulse"
             data-ocid="admin.product_images.loading_state"
           >
-            Uploading images...
+            {uploadStatus || "Uploading..."}
           </p>
         )}
       </div>
@@ -182,6 +190,7 @@ export function AdminProductImagesPage({ productId }: Props) {
                   src={uint8ToDataUrl(img.imageData, img.imageType)}
                   alt={`Gallery item ${i + 1}`}
                   className="w-full aspect-square object-cover rounded-lg border border-gold-border/30"
+                  loading="lazy"
                 />
                 {i === 0 ? (
                   <span className="absolute bottom-0 left-0 right-0 text-[10px] text-center bg-background/80 text-gold rounded-b-lg py-0.5 font-semibold tracking-wider">

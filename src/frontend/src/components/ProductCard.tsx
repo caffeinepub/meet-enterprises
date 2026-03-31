@@ -160,6 +160,7 @@ export function ProductCard({
                     src={uint8ToDataUrl(img.imageData, img.imageType)}
                     alt={`${product.name} ${i + 1}`}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
                   />
                 </div>
               ))}

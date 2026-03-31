@@ -137,9 +137,12 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-gold-border/30 flex items-center justify-center">
+        <div className="mt-8 pt-6 border-t border-gold-border/30 flex flex-col items-center gap-1">
           <p className="text-xs text-muted-foreground text-center w-full">
             Meet Enterprise all rights are reserved
+          </p>
+          <p className="text-xs text-muted-foreground/60 text-center w-full">
+            Designed By Neev Vora
           </p>
         </div>
       </div>

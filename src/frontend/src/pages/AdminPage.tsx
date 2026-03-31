@@ -533,7 +533,6 @@ function parseCommaSeparated(input: string): string[] {
 function ProductsTab() {
   const { data: products, isLoading } = useProducts();
   const { data: categories } = useCategories();
-  const { actor } = useActor();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
@@ -563,7 +562,7 @@ function ProductsTab() {
     setColourInput("");
   };
 
-  const openEdit = async (p: {
+  const openEdit = (p: {
     id: bigint;
     name: string;
     description: string;
@@ -574,31 +573,24 @@ function ProductsTab() {
     sizes: string[];
     colours: string[];
   }) => {
-    try {
-      if (!actor) {
-        toast.error("Backend not connected");
-        return;
-      }
-      const full = await actor.getProductById(p.id);
-      setEditingId(full.id);
-      setForm({
-        name: full.name,
-        description: full.description,
-        mrp: Number(full.mrp).toString(),
-        discountAmount: Number(full.discountAmount).toString(),
-        categoryId: full.categoryId.toString(),
-        inStock: full.inStock,
-        sizes: [...full.sizes],
-        colours: [...full.colours],
-        image: full.image,
-        imageType: full.imageType || "",
-      });
-      setSizeInput(full.sizes.join(", "));
-      setColourInput(full.colours.join(", "));
-      setDialogOpen(true);
-    } catch {
-      toast.error("Failed to load product details");
-    }
+    // Open dialog instantly using already-loaded product list data.
+    // No backend call needed – image is resolved from productImages on save.
+    setEditingId(p.id);
+    setForm({
+      name: p.name,
+      description: p.description,
+      mrp: Number(p.mrp).toString(),
+      discountAmount: Number(p.discountAmount).toString(),
+      categoryId: p.categoryId.toString(),
+      inStock: p.inStock,
+      sizes: [...p.sizes],
+      colours: [...p.colours],
+      image: null, // null = keep existing; resolved from productImages on save
+      imageType: "",
+    });
+    setSizeInput(p.sizes.join(", "));
+    setColourInput(p.colours.join(", "));
+    setDialogOpen(true);
   };
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -623,6 +615,22 @@ function ProductsTab() {
     }
     const parsedSizes = parseCommaSeparated(sizeInput);
     const parsedColours = parseCommaSeparated(colourInput);
+
+    // Resolve image: use newly uploaded image if changed, else fall back to
+    // the primary productImage (already loaded in background via useProductImages).
+    let resolvedImage = form.image;
+    let resolvedImageType = form.imageType;
+    if (resolvedImage === null && editingId !== null) {
+      if (productImages && productImages.length > 0) {
+        resolvedImage = productImages[0].imageData;
+        resolvedImageType = productImages[0].imageType;
+      } else {
+        // Images haven't loaded yet — use empty placeholder (shouldn't normally happen)
+        resolvedImage = new Uint8Array();
+        resolvedImageType = "image/jpeg";
+      }
+    }
+
     const info = {
       name: form.name,
       description: form.description,
@@ -632,8 +640,8 @@ function ProductsTab() {
       inStock: form.inStock,
       sizes: parsedSizes,
       colours: parsedColours,
-      image: form.image ?? new Uint8Array(),
-      imageType: form.imageType || "image/jpeg",
+      image: resolvedImage ?? new Uint8Array(),
+      imageType: resolvedImageType || "image/jpeg",
     };
     try {
       if (editingId !== null) {
@@ -1025,9 +1033,7 @@ function ProductsTab() {
                             onChange={async (e) => {
                               const files = Array.from(e.target.files || []);
                               if (files.length === 0) return;
-                              const currentCount = productImages?.length ?? 0;
-                              const remaining = 7 - currentCount;
-                              const toUpload = files.slice(0, remaining);
+                              const toUpload = files; // unlimited images
                               setAddImagePending(true);
                               try {
                                 for (const file of toUpload) {
