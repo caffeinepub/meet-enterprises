@@ -145,6 +145,7 @@ export interface backendInterface {
     getAllUsers(adminToken: string): Promise<Array<UserProfile>>;
     getAllVouchers(adminToken: string): Promise<Array<Voucher>>;
     updateOrderStatus(adminToken: string, orderId: string, status: string): Promise<void>;
+    deleteOrder(adminToken: string, orderId: string): Promise<void>;
     setPaymentSettings(adminToken: string, upiId: string, qrImage: Uint8Array, qrImageType: string): Promise<void>;
     setInstagramHandle(adminToken: string, handle: string): Promise<void>;
     getInstagramHandle(): Promise<string>;

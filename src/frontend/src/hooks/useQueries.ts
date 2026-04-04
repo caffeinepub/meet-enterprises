@@ -35,7 +35,7 @@ export function useCategories() {
     queryKey: ["categories"],
     queryFn: async () => (actor ? actor.getCategories() : []),
     enabled: !!actor,
-    staleTime: 10 * 60 * 1000, // 10 min – categories rarely change
+    staleTime: 0, // always fresh so newly added categories show immediately
   });
 }
 
@@ -329,6 +329,19 @@ export function useUpdateOrderStatus() {
       requireActor(actor);
       const token = requireAdminToken();
       return actor.updateOrderStatus(token, orderId, status);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["allOrders"] }),
+  });
+}
+
+export function useDeleteOrder() {
+  const { actor } = useActor();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      requireActor(actor);
+      const token = requireAdminToken();
+      return actor.deleteOrder(token, orderId);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["allOrders"] }),
   });

@@ -235,6 +235,7 @@ export const idlService = IDL.Service({
   'rateProduct' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
   'setTheme' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'verifyDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+  'deleteOrder' : IDL.Func([IDL.Text, IDL.Text], [], []),
 });
 
 export const idlFactory = ({ IDL }) => {
@@ -462,6 +463,7 @@ export const idlFactory = ({ IDL }) => {
     'rateProduct' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
     'setTheme' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'verifyDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+    'deleteOrder' : IDL.Func([IDL.Text, IDL.Text], [], []),
   });
 };
 

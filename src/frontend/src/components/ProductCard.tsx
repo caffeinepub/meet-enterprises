@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "@tanstack/react-router";
 import { Heart, ShoppingCart, Star, Tag } from "lucide-react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import type { Category, ProductSummary } from "../backend.d";
 import { useCart } from "../context/CartContext";
@@ -67,6 +67,7 @@ export function ProductCard({
   );
   const [imgIndex, setImgIndex] = useState(0);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const { data: images } = useProductImages(product.id);
   const { data: ratingData } = useProductRating(product.id);
@@ -76,6 +77,29 @@ export function ProductCard({
   const hasDiscount = Number(product.discountAmount) > 0;
 
   const hasMultipleImages = images && images.length > 1;
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -8;
+    const rotateY = ((x - centerX) / centerX) * 8;
+    card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(4px)`;
+    card.style.boxShadow =
+      "0 20px 60px oklch(0.78 0.13 85 / 0.15), 0 0 20px oklch(0.78 0.13 85 / 0.08)";
+  };
+
+  const handleMouseLeave = () => {
+    const card = cardRef.current;
+    if (!card) return;
+    card.style.transform =
+      "perspective(800px) rotateX(0deg) rotateY(0deg) translateZ(0)";
+    card.style.boxShadow = "";
+  };
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -126,11 +150,14 @@ export function ProductCard({
   return (
     <>
       <motion.div
+        ref={cardRef}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: index * 0.05 }}
-        className="card-luxury group flex flex-col overflow-hidden hover:border-gold transition-colors duration-300 cursor-pointer"
+        className="card-luxury card-3d holo-border group flex flex-col overflow-hidden hover:border-gold transition-colors duration-300 cursor-pointer"
         onClick={handleCardClick}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
         data-ocid={`product.item.${index + 1}`}
       >
         <div

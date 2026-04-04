@@ -80,7 +80,6 @@ export function ProductDetailPage() {
   );
   const [quantity, setQuantity] = useState(1);
 
-  // Scroll to top when product page mounts (component is re-created per URL)
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -185,12 +184,13 @@ export function ProductDetailPage() {
       </button>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-        {/* Image Gallery */}
+        {/* 3D Perspective Image Gallery */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
           className="relative aspect-[3/4] overflow-hidden rounded-xl bg-secondary select-none"
+          style={{ position: "relative" }}
           onTouchStart={handleTouchStart}
           onTouchEnd={(e) => {
             handleTouchEnd(e);
@@ -201,27 +201,58 @@ export function ProductDetailPage() {
         >
           {images && images.length > 0 ? (
             <div
-              className="flex h-full"
-              style={{
-                width: `${images.length * 100}%`,
-                transform: `translateX(-${imgIndex * (100 / images.length)}%)`,
-                transition: "transform 0.3s ease",
-              }}
+              className="w-full h-full"
+              style={{ perspective: "1000px", perspectiveOrigin: "center" }}
             >
-              {images.map((img, i) => (
-                <div
-                  key={`${img.imageType}-${i}`}
-                  style={{ width: `${100 / images.length}%` }}
-                  className="h-full flex-shrink-0"
-                >
-                  <img
-                    src={uint8ToDataUrl(img.imageData, img.imageType)}
-                    alt={`${product.name} ${i + 1}`}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                </div>
-              ))}
+              {images.map((img, i) => {
+                const offset = i - imgIndex;
+                const isActive = offset === 0;
+                const absOffset = Math.abs(offset);
+                if (absOffset > 1) return null;
+                return (
+                  <div
+                    key={`${img.imageType}-${i}`}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      transform: `
+                        perspective(1000px)
+                        rotateY(${offset * 35}deg)
+                        translateX(${offset * 30}%)
+                        translateZ(${isActive ? 0 : -80}px)
+                        scale(${isActive ? 1 : 0.82})
+                      `,
+                      transition:
+                        "all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                      zIndex: isActive ? 2 : 1,
+                      opacity: isActive ? 1 : 0.5,
+                      borderRadius: "0.75rem",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <img
+                      src={uint8ToDataUrl(img.imageData, img.imageType)}
+                      alt={`${product.name} ${i + 1}`}
+                      className="w-full h-full object-cover"
+                      loading={isActive ? "eager" : "lazy"}
+                    />
+                    {isActive && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          inset: 0,
+                          borderRadius: "0.75rem",
+                          background:
+                            "linear-gradient(135deg, oklch(0.78 0.13 85 / 0.12) 0%, transparent 40%, transparent 60%, oklch(0.85 0.18 180 / 0.08) 100%)",
+                          pointerEvents: "none",
+                          animation: "holo-shimmer 4s linear infinite",
+                          backgroundSize: "300% 100%",
+                        }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           ) : product?.image && product.image.length > 0 ? (
             <img
@@ -236,7 +267,7 @@ export function ProductDetailPage() {
             </div>
           )}
 
-          {/* Left/Right arrows (visible on hover) */}
+          {/* Left/Right arrows */}
           {hasMultipleImages && (
             <>
               <button
@@ -244,6 +275,7 @@ export function ProductDetailPage() {
                 onClick={() => setImgIndex((i) => Math.max(i - 1, 0))}
                 disabled={imgIndex === 0}
                 className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/70 flex items-center justify-center transition-opacity disabled:opacity-20"
+                style={{ zIndex: 10 }}
                 data-ocid="product_detail.gallery_prev.button"
               >
                 <ChevronLeft className="w-4 h-4 text-foreground" />
@@ -255,6 +287,7 @@ export function ProductDetailPage() {
                 }
                 disabled={imgIndex === images.length - 1}
                 className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/70 flex items-center justify-center transition-opacity disabled:opacity-20"
+                style={{ zIndex: 10 }}
                 data-ocid="product_detail.gallery_next.button"
               >
                 <ChevronRight className="w-4 h-4 text-foreground" />
@@ -264,7 +297,10 @@ export function ProductDetailPage() {
 
           {/* Dot indicators */}
           {hasMultipleImages && (
-            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+            <div
+              className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5"
+              style={{ zIndex: 10 }}
+            >
               {images.map((img, i) => (
                 <button
                   key={`dot-${i}-${img.imageType}`}
@@ -284,14 +320,20 @@ export function ProductDetailPage() {
           )}
 
           {!product.inStock && (
-            <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-background/60 flex items-center justify-center"
+              style={{ zIndex: 10 }}
+            >
               <Badge className="bg-destructive text-destructive-foreground text-base px-4 py-2">
                 Out of Stock
               </Badge>
             </div>
           )}
           {hasDiscount && (
-            <Badge className="absolute top-3 right-3 bg-gold text-background border-0 text-xs tracking-wider px-2 py-1">
+            <Badge
+              className="absolute top-3 right-3 bg-gold text-background border-0 text-xs tracking-wider px-2 py-1"
+              style={{ zIndex: 10 }}
+            >
               -
               {Math.round(
                 (Number(product.discountAmount) / Number(product.mrp)) * 100,

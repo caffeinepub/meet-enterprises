@@ -84,36 +84,45 @@ export function ShopPage() {
           </div>
         )}
 
-        {/* Products Grid */}
-        {prodLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Skeleton key={i} className="aspect-[3/4]" />
-            ))}
-          </div>
-        ) : filtered.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {filtered.map((p, idx) => (
-              <ProductCard
-                key={p.id.toString()}
-                product={p}
-                categories={categories}
-                index={idx}
-              />
-            ))}
-          </div>
-        ) : (
-          <div
-            className="text-center py-24 card-luxury"
-            data-ocid="shop.product.empty_state"
-          >
-            <p className="text-muted-foreground">
-              {search || activeCategory
-                ? "No products match your filters."
-                : "No products available yet."}
-            </p>
-          </div>
-        )}
+        {/* Products Grid — 3D staggered reveal */}
+        <div className="perspective-container">
+          {prodLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="aspect-[3/4]" />
+              ))}
+            </div>
+          ) : filtered.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {filtered.map((p, idx) => (
+                <motion.div
+                  key={p.id.toString()}
+                  initial={{ opacity: 0, rotateX: 12, y: 30 }}
+                  animate={{ opacity: 1, rotateX: 0, y: 0 }}
+                  transition={{ duration: 0.6, delay: idx * 0.04 }}
+                  style={{ transformStyle: "preserve-3d" }}
+                >
+                  <ProductCard
+                    product={p}
+                    categories={categories}
+                    index={idx}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div
+              className="text-center py-24 card-luxury"
+              data-ocid="shop.product.empty_state"
+            >
+              <p className="text-muted-foreground">
+                {search || activeCategory
+                  ? "No products match your filters."
+                  : "No products available yet."}
+              </p>
+            </div>
+          )}
+        </div>
       </motion.div>
     </main>
   );

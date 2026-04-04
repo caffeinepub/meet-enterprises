@@ -182,6 +182,7 @@ export interface _SERVICE {
   'rateProduct' : ActorMethod<[bigint, bigint], undefined>,
   'setTheme' : ActorMethod<[string, string], undefined>,
   'verifyDeliveryCode' : ActorMethod<[string, string], boolean>,
+  'deleteOrder' : ActorMethod<[string, string], undefined>,
   'updateProduct' : ActorMethod<
     [
       string,

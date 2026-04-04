@@ -8,23 +8,51 @@ export type LocalProfile = {
   whatsapp: string;
 };
 
+function profileKey(name: string, whatsapp: string) {
+  return `${PROFILE_KEY}_${name.trim().toLowerCase()}_${whatsapp.trim()}`;
+}
+
 export function useLocalProfile() {
+  // Read the active profile from localStorage.
+  // We store a pointer key so we know which profile is currently active.
   const [profile, setProfileState] = useState<LocalProfile | null>(() => {
     try {
+      // Try legacy single-key first for backward compat
+      const activeKey = localStorage.getItem(`${PROFILE_KEY}_active`);
+      if (activeKey) {
+        const raw = localStorage.getItem(activeKey);
+        return raw ? (JSON.parse(raw) as LocalProfile) : null;
+      }
+      // Fall back to old single-key profile
       const raw = localStorage.getItem(PROFILE_KEY);
-      return raw ? (JSON.parse(raw) as LocalProfile) : null;
+      if (raw) {
+        const parsed = JSON.parse(raw) as LocalProfile;
+        // Migrate to new keyed format
+        const key = profileKey(parsed.name, parsed.whatsapp);
+        localStorage.setItem(key, JSON.stringify(parsed));
+        localStorage.setItem(`${PROFILE_KEY}_active`, key);
+        localStorage.removeItem(PROFILE_KEY);
+        return parsed;
+      }
+      return null;
     } catch {
       return null;
     }
   });
 
   const setProfile = useCallback((p: LocalProfile) => {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
+    const key = profileKey(p.name, p.whatsapp);
+    localStorage.setItem(key, JSON.stringify(p));
+    localStorage.setItem(`${PROFILE_KEY}_active`, key);
     setProfileState(p);
   }, []);
 
   const clearProfile = useCallback(() => {
-    localStorage.removeItem(PROFILE_KEY);
+    const activeKey = localStorage.getItem(`${PROFILE_KEY}_active`);
+    if (activeKey) {
+      localStorage.removeItem(activeKey);
+      localStorage.removeItem(`${PROFILE_KEY}_active`);
+    }
     setProfileState(null);
   }, []);
 

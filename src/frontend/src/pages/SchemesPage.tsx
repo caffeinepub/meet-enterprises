@@ -22,7 +22,7 @@ export function SchemesPage() {
         animate={{ opacity: 1, y: 0 }}
       >
         <h1 className="font-serif text-4xl text-gold uppercase tracking-widest text-center mb-2">
-          Schemes & Offers
+          Schemes &amp; Offers
         </h1>
         <p className="text-center text-muted-foreground text-sm mb-2">
           Exclusive deals and coupon codes just for you
@@ -35,7 +35,7 @@ export function SchemesPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="card-luxury p-5 flex items-center gap-4 mb-8"
+            className="card-luxury holo-border p-5 flex items-center gap-4 mb-8"
             data-ocid="schemes.instagram.card"
           >
             <div
@@ -75,10 +75,11 @@ export function SchemesPage() {
             {schemes.map((scheme, idx) => (
               <motion.div
                 key={scheme.id.toString()}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.08 }}
-                className="card-luxury p-6 flex flex-col gap-4"
+                initial={{ opacity: 0, rotateX: 10, y: 24 }}
+                animate={{ opacity: 1, rotateX: 0, y: 0 }}
+                transition={{ delay: idx * 0.08, duration: 0.55 }}
+                className="card-luxury holo-border p-6 flex flex-col gap-4"
+                style={{ transformStyle: "preserve-3d" }}
                 data-ocid={`scheme.card.${idx + 1}`}
               >
                 <div className="flex items-start gap-3">

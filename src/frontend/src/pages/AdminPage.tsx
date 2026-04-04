@@ -66,6 +66,7 @@ import {
   useCreateReel,
   useCreateScheme,
   useDeleteCategory,
+  useDeleteOrder,
   useDeleteProduct,
   useDeleteReel,
   useDeleteScheme,
@@ -1207,6 +1208,7 @@ function OrdersTab() {
   const { data: orders, isLoading } = useAllOrders();
   const { data: users } = useAllUsers();
   const updateStatus = useUpdateOrderStatus();
+  const deleteOrder = useDeleteOrder();
   const { actor } = useActor();
   const [deliveryCodes, setDeliveryCodes] = useState<Record<string, string>>(
     {},
@@ -1269,13 +1271,16 @@ function OrdersTab() {
                 <TableHead className="text-gold-muted uppercase text-xs tracking-widest">
                   Code
                 </TableHead>
+                <TableHead className="text-gold-muted uppercase text-xs tracking-widest">
+                  Delete
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {!orders?.length ? (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={8}
                     className="text-center text-muted-foreground py-8"
                   >
                     No orders yet
@@ -1343,6 +1348,31 @@ function OrdersTab() {
                           >
                             <Key className="w-3 h-3 mr-1" />
                             {generatingCode === order.id ? "..." : "Code"}
+                          </Button>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {order.status === "Delivered" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs border-red-800 text-red-400 hover:text-red-300 hover:border-red-600 px-2"
+                            onClick={async () => {
+                              try {
+                                await deleteOrder.mutateAsync(order.id);
+                                toast.success("Order deleted.");
+                              } catch (e) {
+                                toast.error(
+                                  e instanceof Error
+                                    ? e.message
+                                    : "Failed to delete order",
+                                );
+                              }
+                            }}
+                            disabled={deleteOrder.isPending}
+                            data-ocid={`admin.order.delete_button.${idx + 1}`}
+                          >
+                            <Trash2 className="w-3 h-3" />
                           </Button>
                         )}
                       </TableCell>

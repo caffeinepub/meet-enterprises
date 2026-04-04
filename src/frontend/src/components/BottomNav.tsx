@@ -34,11 +34,18 @@ export function BottomNav() {
               <motion.div
                 animate={{ scale: isActive ? 1.15 : 1 }}
                 transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                style={
+                  isActive
+                    ? { filter: "drop-shadow(0 0 8px oklch(0.78 0.13 85))" }
+                    : {}
+                }
               >
                 <Icon
                   className="w-5 h-5"
                   style={{
-                    color: isActive ? "var(--gold)" : "oklch(0.55 0.005 230)",
+                    color: isActive
+                      ? "oklch(0.78 0.13 85)"
+                      : "oklch(0.55 0.005 230)",
                   }}
                   strokeWidth={isActive ? 2.5 : 1.5}
                 />
@@ -46,12 +53,29 @@ export function BottomNav() {
               <span
                 className="text-[10px] tracking-wider uppercase"
                 style={{
-                  color: isActive ? "var(--gold)" : "oklch(0.55 0.005 230)",
+                  color: isActive
+                    ? "oklch(0.78 0.13 85)"
+                    : "oklch(0.55 0.005 230)",
                   fontWeight: isActive ? 600 : 400,
                 }}
               >
                 {label}
               </span>
+              {/* Gold glow dot under active item */}
+              {isActive ? (
+                <div
+                  style={{
+                    width: 4,
+                    height: 4,
+                    borderRadius: "50%",
+                    background: "oklch(0.78 0.13 85)",
+                    boxShadow: "0 0 8px oklch(0.78 0.13 85)",
+                    margin: "2px auto 0",
+                  }}
+                />
+              ) : (
+                <div style={{ width: 4, height: 4, margin: "2px auto 0" }} />
+              )}
             </button>
           );
         })}

@@ -196,6 +196,7 @@ export interface backendInterface {
     deleteCategory(adminToken: string, id: bigint): Promise<void>;
     deleteProduct(adminToken: string, id: bigint): Promise<void>;
     deleteScheme(adminToken: string, id: bigint): Promise<void>;
+    deleteOrder(adminToken: string, orderId: string): Promise<void>;
     getAllOrders(adminToken: string): Promise<Array<Order>>;
     getAllUsers(adminToken: string): Promise<Array<UserProfile>>;
     getAllVouchers(adminToken: string): Promise<Array<Voucher>>;
@@ -768,6 +769,18 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.createReel(arg0, arg1, arg2, productIdCandid);
             return { ...result, productId: result.productId.length === 0 ? null : result.productId[0] } as any;
+        }
+    }
+    async deleteOrder(arg0: string, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                await this.actor.deleteOrder(arg0, arg1);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            await this.actor.deleteOrder(arg0, arg1);
         }
     }
     async deleteReel(arg0: string, arg1: bigint): Promise<void> {

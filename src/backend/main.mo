@@ -837,6 +837,12 @@ actor {
     vouchers.values().toArray().sort(compareVoucherByCreatedAt);
   };
 
+
+  public shared func deleteOrder(adminToken : Text, orderId : Text) : async () {
+    if (not isValidAdmin(adminToken)) { Runtime.trap("Unauthorized: Invalid admin code") };
+    ignore orders.remove(orderId);
+    ignore deliveryCodes.remove(orderId);
+  };
   public shared func createScheme(adminToken : Text, title : Text, description : Text, couponCode : Text) : async Scheme {
     if (not isValidAdmin(adminToken)) { Runtime.trap("Unauthorized: Invalid admin code") };
     let scheme : Scheme = { id = nextSchemeId; title; description; couponCode; createdAt = Time.now() };

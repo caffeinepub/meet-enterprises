@@ -142,7 +142,15 @@ export function Footer() {
             Meet Enterprise all rights are reserved
           </p>
           <p className="text-xs text-muted-foreground/60 text-center w-full">
-            Designed By Neev Vora
+            Designed By{" "}
+            <a
+              href="https://wa.me/919924112547"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gold hover:underline cursor-pointer"
+            >
+              Neev Vora
+            </a>
           </p>
         </div>
       </div>
