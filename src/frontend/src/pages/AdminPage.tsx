@@ -1332,6 +1332,9 @@ function OrdersTab() {
                           </SelectContent>
                         </Select>
                       </TableCell>
+                      <TableCell className="text-muted-foreground text-xs max-w-[120px] truncate">
+                        {order.deliveryLocation || "—"}
+                      </TableCell>
                       <TableCell>
                         {code ? (
                           <span className="font-mono text-gold text-sm tracking-widest border border-gold-border px-2 py-0.5">
