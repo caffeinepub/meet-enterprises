@@ -1,50 +1,56 @@
-# Meet Enterprises — Full 3D Visual Upgrade
+# Meet Enterprises - 3D Movable Products
 
 ## Current State
-The app is a dark luxury fashion e-commerce platform with a gold/dark theme. It uses motion/react for basic fade/slide animations. The homepage has a static hero with a background image. Product cards use simple CSS hover scale. The product detail page has a flat swipeable image gallery. All pages use flat 2D layouts with oklch color tokens.
 
-Three.js / @react-three/fiber / @react-three/drei are already installed in package.json. The `motion` library (motion/react) is also available.
+ProductCard (`src/frontend/src/components/ProductCard.tsx`) already has a basic mouse-tilt effect via `onMouseMove`/`onMouseLeave` handlers that apply `perspective(800px) rotateX/rotateY` transforms. There is no auto-rotation and no drag-to-rotate.
+
+ProductDetailPage (`src/frontend/src/pages/ProductDetailPage.tsx`) has a 3D perspective carousel for images (rotateY offset for adjacent slides), but no interactive tilt, no auto-rotation, and no drag-to-rotate behavior.
+
+ThreeHero already uses `@react-three/fiber` and Three.js for the background hero scene.
 
 ## Requested Changes (Diff)
 
 ### Add
-- **Homepage 3D Hero**: Animated Three.js canvas as hero background — floating gold particles, a subtle rotating 3D mesh or ring, depth fog. Lightweight, GPU-accelerated, mobile-optimized (reduces particle count on mobile).
-- **3D Product Card**: Each product card gets a subtle CSS perspective `rotateX/rotateY` tilt effect on hover/touch-move (mouse tracking). Cards have a holographic shimmer border using CSS gradient animation.
-- **3D Product Image Gallery**: On the Product Detail page, images are displayed in a 3D carousel — images arranged in a flat arc/perspective layout where swiping rotates them around a Z-axis with `perspective` CSS, giving a carousel-in-depth feel. The selected image is front and center, others are slightly rotated/scaled back.
-- **Holographic product frame**: Each product image (on detail page) sits inside a glowing holographic frame with animated rainbow/gold border shimmer.
-- **Floating particle background**: Subtle floating particles on all customer-facing pages (not admin), using a lightweight canvas or CSS-only animated dots. Very low opacity, performant.
-- **3D card lift on homepage grid**: Product cards in the grid have a 3D tilt/lift effect using CSS `transform: perspective() rotateX() rotateY()` tracked to pointer position.
-- **Bottom nav 3D active indicator**: Active nav item has a glowing 3D pill indicator with depth shadow.
-- **Section reveal animations**: Page sections animate in with 3D perspective flip (rotateX from 10deg to 0deg) as they enter viewport, using motion/react.
+- **ProductCard**: Auto-slow-rotation animation (gentle continuous X/Y oscillation) when the card is idle/not being interacted with.
+- **ProductCard**: Drag-to-rotate on touch devices — user drags finger across the card image to rotate the product view in 3D.
+- **ProductDetailPage**: Interactive 3D tilt on touch — as the user moves their finger across the image area, the image tilts in 3D following the touch position (like a holographic card).
+- **ProductDetailPage**: Auto-rotation when idle (subtle slow spin on Y axis).
+- **ProductDetailPage**: Drag-to-rotate — user drags the image to manually spin the product 360° (using the uploaded images in sequence to simulate a 360° view).
+- A new `useProduct3D` hook (or inline logic) to manage the 3D state (rotation angles, drag state, auto-rotate timer).
 
 ### Modify
-- **HomePage**: Replace flat hero background with Three.js canvas scene (particles + ambient glow). Keep existing text, buttons, logos intact. Logo section gets subtle floating animation.
-- **ProductCard**: Add CSS 3D tilt tracking on hover/touch, holographic shimmer border.
-- **ProductDetailPage**: Replace flat gallery with 3D perspective carousel. Keep all existing functionality (swipe, dots, arrows).
-- **ShopPage**: Add 3D grid reveal animations. Category pills get a 3D depth on active state.
-- **CategoriesPage**: Add 3D reveal animations to category tiles.
-- **SchemesPage**: Add 3D card layout for scheme cards.
-- **index.css**: Add CSS utility classes for 3D transforms, holographic shimmer animation, and perspective containers.
+- **ProductCard**: Replace existing simple mouse-tilt with a combined system: tilt on hover/touch-move + auto-rotation when idle + drag-to-spin.
+- **ProductDetailPage**: Enhance the existing perspective carousel to also support drag-to-rotate (drag horizontally advances images + applies 3D rotation) and auto-rotation when idle.
+- Use `requestAnimationFrame` or `useFrame` for smooth animation. For CSS-only 3D (product cards), use `transform` with `will-change: transform` for GPU acceleration.
+- Auto-rotation pauses when user is interacting (hovering/dragging), resumes after 2 seconds of inactivity.
 
 ### Remove
-- Nothing is removed. All existing features stay intact.
+- The existing simple `handleMouseMove`/`handleMouseLeave` raw DOM style mutations in ProductCard (replaced by the new unified system).
 
 ## Implementation Plan
 
-1. **index.css**: Add `@keyframes holographic-shimmer`, `@keyframes float`, perspective utility classes, `.card-3d-tilt`, `.holographic-border`, `.holo-shimmer` styles.
+1. **ProductCard 3D system**:
+   - Replace raw `card.style.transform` mutations with React state (`rotateX`, `rotateY`).
+   - Add a `useEffect` that runs a `requestAnimationFrame` auto-rotation loop (gentle sin/cos oscillation, ~±8 degrees, ~0.5 rpm).
+   - Pause auto-rotation on `onMouseEnter`/`onTouchStart`, resume 2s after `onMouseLeave`/`onTouchEnd`.
+   - On touch: `onTouchMove` calculates delta from touch start, maps to rotateX/rotateY (capped ±15 degrees).
+   - Keep existing swipe-to-change-image logic (swipe > 50px triggers image change, smaller movements are 3D tilt).
+   - Apply `style={{ transform: \`perspective(800px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(4px)\`, willChange: 'transform', transition: isDragging ? 'none' : 'transform 0.4s ease' }}`.
 
-2. **Create `src/components/ThreeHero.tsx`**: Lightweight Three.js canvas using @react-three/fiber. Renders floating gold particles (BufferGeometry points), a subtle rotating torus or ring mesh, ambient + directional gold lighting. Reduced particle count on mobile (detect via `window.innerWidth < 768`). Wrapped in a fixed-position container behind hero text. Falls back to static background if WebGL unavailable.
+2. **ProductDetailPage 3D system**:
+   - Add `rotateX`, `rotateY` state for the image container.
+   - Auto-rotation: slow Y-axis spin (±15 degrees oscillation) when idle.
+   - Touch tilt: `onTouchMove` maps touch position to rotateX/rotateY.
+   - Drag-to-advance: horizontal drag > 60px advances to next/prev image (existing logic, keep it).
+   - Apply 3D transform to the image container wrapper div (not individual images).
+   - Wrap the entire image area in a `style={{ perspective: '1200px' }}` container, and apply `rotateX/rotateY` to the inner content div.
 
-3. **Create `src/components/HolographicFrame.tsx`**: A wrapper div with animated holographic border CSS. Accepts children (product image). Uses the shimmer keyframe animation.
+3. **Performance**:
+   - Use `will-change: transform` on animated elements.
+   - Auto-rotation uses `requestAnimationFrame` with a ref to avoid re-renders.
+   - Rotation state stored in a `useRef` and applied directly to DOM for the auto-rotation path (no React re-render per frame).
+   - Auto-rotation particle count kept low (already done in ThreeHero).
+   - On mobile, reduce tilt range to ±8 degrees (vs ±15 on desktop).
 
-4. **Modify `ProductCard.tsx`**: Add pointer-tracking 3D tilt with `onMouseMove`/`onMouseLeave` updating CSS `transform: perspective(800px) rotateX(Xdeg) rotateY(Ydeg)`. Add holographic shimmer border class.
-
-5. **Modify `HomePage.tsx`**: Replace background image hero section with `<ThreeHero>` component. Add floating animation to logo section. Add 3D reveal to product grid.
-
-6. **Modify `ProductDetailPage.tsx`**: Replace flat translateX gallery with a 3D perspective carousel. Active image is `scale(1) rotateY(0deg) translateZ(0)`, adjacent images are `scale(0.85) rotateY(±15deg) translateZ(-80px)`. Use CSS `perspective: 1200px` on container. Keep swipe/touch/dot/arrow logic intact.
-
-7. **Modify `ShopPage.tsx`**: Wrap product grid in a motion container with staggered 3D reveal (initial: `rotateX: 15, opacity: 0`, animate: `rotateX: 0, opacity: 1`).
-
-8. **Modify `BottomNav.tsx`**: Active item gets a glowing gold 3D pill with `box-shadow: 0 4px 20px gold, 0 0 8px gold`, subtle scale-up.
-
-9. **Performance**: ThreeHero uses `frameloop="demand"` or `frameloop="always"` with `dpr={[1, 1.5]}` cap. Particles: 80 on desktop, 30 on mobile. All 3D CSS effects use `will-change: transform` and `transform: translate3d(0,0,0)` to force GPU compositing.
+4. No backend changes needed.
+5. No admin panel changes.
