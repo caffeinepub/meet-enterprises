@@ -15,23 +15,23 @@ function TshirtSVG({ size = 64 }: { size?: number }) {
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="goldGradMascot" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#C9973A" />
           <stop offset="50%" stopColor="#F0C060" />
           <stop offset="100%" stopColor="#B8821A" />
         </linearGradient>
-        <linearGradient id="bodyGrad" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="bodyGradMascot" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#1A1F30" />
           <stop offset="100%" stopColor="#0D1020" />
         </linearGradient>
-        <filter id="glow">
+        <filter id="glowMascot">
           <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-        <filter id="goldGlow">
+        <filter id="goldGlowMascot">
           <feGaussianBlur stdDeviation="1.5" result="coloredBlur" />
           <feMerge>
             <feMergeNode in="coloredBlur" />
@@ -43,19 +43,19 @@ function TshirtSVG({ size = 64 }: { size?: number }) {
       {/* T-shirt body */}
       <path
         d="M18 22 L8 34 L18 38 L18 68 L62 68 L62 38 L72 34 L62 22 L52 14 C50 18 44 22 40 22 C36 22 30 18 28 14 Z"
-        fill="url(#bodyGrad)"
-        stroke="url(#goldGrad)"
+        fill="url(#bodyGradMascot)"
+        stroke="url(#goldGradMascot)"
         strokeWidth="2"
-        filter="url(#glow)"
+        filter="url(#glowMascot)"
       />
 
       {/* Collar highlight */}
       <path
         d="M28 14 C30 18 36 22 40 22 C44 22 50 18 52 14"
-        stroke="url(#goldGrad)"
+        stroke="url(#goldGradMascot)"
         strokeWidth="1.5"
         fill="none"
-        filter="url(#goldGlow)"
+        filter="url(#goldGlowMascot)"
         strokeLinecap="round"
       />
 
@@ -100,11 +100,11 @@ function TshirtSVG({ size = 64 }: { size?: number }) {
         y="50"
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="url(#goldGrad)"
+        fill="url(#goldGradMascot)"
         fontSize="12"
         fontWeight="700"
         fontFamily="serif"
-        filter="url(#goldGlow)"
+        filter="url(#goldGlowMascot)"
         letterSpacing="1"
       >
         ME
@@ -113,10 +113,17 @@ function TshirtSVG({ size = 64 }: { size?: number }) {
       {/* Crown above monogram */}
       <path
         d="M34 36 L36 31 L40 34 L44 31 L46 36 Z"
-        fill="url(#goldGrad)"
-        filter="url(#goldGlow)"
+        fill="url(#goldGradMascot)"
+        filter="url(#goldGlowMascot)"
       />
-      <rect x="34" y="36" width="12" height="2" rx="1" fill="url(#goldGrad)" />
+      <rect
+        x="34"
+        y="36"
+        width="12"
+        height="2"
+        rx="1"
+        fill="url(#goldGradMascot)"
+      />
     </svg>
   );
 }
@@ -155,7 +162,6 @@ export function TshirtMascot({ heroMode = false }: { heroMode?: boolean }) {
         heroMode
           ? {
               position: "absolute",
-              // Position near the "Y" in "Your" — roughly center-right of heading
               top: "calc(50% + 20px)",
               left: "calc(50% + 120px)",
               zIndex: 10,
@@ -165,7 +171,9 @@ export function TshirtMascot({ heroMode = false }: { heroMode?: boolean }) {
               position: "fixed",
               bottom: "80px",
               right: "16px",
-              zIndex: 9000,
+              // Reduced from 9000 to 100 — safe, never blocks UI or nav
+              zIndex: 100,
+              pointerEvents: "none",
             }
       }
       whileHover={{ scale: 1.15 }}

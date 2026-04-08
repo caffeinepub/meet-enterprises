@@ -139,6 +139,8 @@ declare module "@tanstack/react-router" {
 }
 
 export default function App() {
+  // showSplash controls the overlay — the router mounts immediately underneath
+  // so the app is never blocked. Splash fades out after 800ms max.
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
@@ -146,23 +148,20 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Primary timeout: 1000ms
-    const t = setTimeout(() => setShowSplash(false), 1000);
-    // Safety fallback: force dismiss after 1500ms no matter what
-    const safety = setTimeout(() => setShowSplash(false), 1500);
-    return () => {
-      clearTimeout(t);
-      clearTimeout(safety);
-    };
+    // Dismiss after 800ms — hard cap, no animation dependency
+    const t = setTimeout(() => setShowSplash(false), 800);
+    return () => clearTimeout(t);
   }, []);
-
-  if (showSplash) return <SplashScreen visible={true} />;
 
   return (
     <CartProvider>
+      {/* Router always mounts — never blocked by splash state */}
       <RouterProvider router={router} />
+      {/* TshirtMascot: small fixed element, z-index 100, not full-screen */}
       <TshirtMascot heroMode={false} />
       <Toaster richColors position="top-center" />
+      {/* Splash overlay sits on top but never blocks router mount */}
+      <SplashScreen visible={showSplash} />
     </CartProvider>
   );
 }
