@@ -4,7 +4,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { ProductCard } from "../components/ProductCard";
-import { ThreeHero } from "../components/ThreeHero";
 import { TshirtMascot } from "../components/TshirtMascot";
 import { useProducts } from "../hooks/useQueries";
 
@@ -49,8 +48,24 @@ export function HomePage() {
           backgroundPosition: "center",
         }}
       >
-        {/* Three.js 3D background */}
-        <ThreeHero />
+        {/* CSS-only gold particle dots for visual depth */}
+        <div
+          className="absolute inset-0 pointer-events-none overflow-hidden"
+          aria-hidden="true"
+        >
+          {Array.from({ length: 18 }, (_, i) => `p${i}`).map((pid, i) => (
+            <div
+              key={pid}
+              className="hero-particle"
+              style={{
+                left: `${5 + ((i * 5.5) % 90)}%`,
+                top: `${10 + ((i * 7.3) % 80)}%`,
+                animationDelay: `${(i * 0.37) % 4}s`,
+                animationDuration: `${3.5 + ((i * 0.4) % 3)}s`,
+              }}
+            />
+          ))}
+        </div>
 
         {/* T-shirt mascot sitting on "Y" of "Your" in hero heading */}
         <TshirtMascot heroMode={true} />

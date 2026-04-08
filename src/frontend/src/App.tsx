@@ -10,9 +10,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { AuthModal } from "./components/AuthModal";
 import { BottomNav } from "./components/BottomNav";
-import { CursorOrb } from "./components/CursorOrb";
 import { Footer } from "./components/Footer";
-import { GlobalParticles } from "./components/GlobalParticles";
 import { Navbar } from "./components/Navbar";
 import { SplashScreen } from "./components/SplashScreen";
 import { TshirtMascot } from "./components/TshirtMascot";
@@ -142,23 +140,28 @@ declare module "@tanstack/react-router" {
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
+
   useEffect(() => {
     loadSavedTheme();
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => setShowSplash(false), 2500);
-    return () => clearTimeout(t);
+    // Primary timeout: 1000ms
+    const t = setTimeout(() => setShowSplash(false), 1000);
+    // Safety fallback: force dismiss after 1500ms no matter what
+    const safety = setTimeout(() => setShowSplash(false), 1500);
+    return () => {
+      clearTimeout(t);
+      clearTimeout(safety);
+    };
   }, []);
 
   if (showSplash) return <SplashScreen visible={true} />;
 
   return (
     <CartProvider>
-      <GlobalParticles />
       <RouterProvider router={router} />
       <TshirtMascot heroMode={false} />
-      <CursorOrb />
       <Toaster richColors position="top-center" />
     </CartProvider>
   );
