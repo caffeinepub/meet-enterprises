@@ -1,4 +1,4 @@
-import type { Category, ProductSummary } from "../backend.d";
+import type { Category, ProductSummary } from "../types";
 
 // Module-level maps that persist across renders (not React state).
 // These survive page navigations within the same session.

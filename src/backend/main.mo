@@ -6,19 +6,13 @@ import Text "mo:core/Text";
 import Order "mo:core/Order";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
-import MixinStorage "blob-storage/Mixin";
-import AccessControl "authorization/access-control";
-import MixinAuthorization "authorization/MixinAuthorization";
 import Blob "mo:core/Blob";
 import Float "mo:core/Float";
 import Int "mo:core/Int";
+import Migration "migration";
 
-
-
+(with migration = Migration.run)
 actor {
-  let accessControlState = AccessControl.initState();
-  include MixinAuthorization(accessControlState);
-  include MixinStorage();
 
   let ADMIN_CODE : Text = "2537";
 

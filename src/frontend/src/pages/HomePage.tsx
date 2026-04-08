@@ -32,7 +32,12 @@ export function HomePage() {
   ];
 
   return (
-    <main>
+    <motion.main
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+    >
       {/* Hero */}
       <section
         className="relative min-h-[85vh] flex items-center justify-center overflow-hidden"
@@ -166,6 +171,6 @@ export function HomePage() {
           </div>
         )}
       </section>
-    </main>
+    </motion.main>
   );
 }

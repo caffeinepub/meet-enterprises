@@ -1,2 +1,7 @@
-// Re-export from .ts implementation
-export * from "./useInternetIdentity";
+// Re-export from the core-infrastructure package
+export {
+  useInternetIdentity,
+  InternetIdentityProvider,
+  type InternetIdentityContext,
+  type Status,
+} from "@caffeineai/core-infrastructure";

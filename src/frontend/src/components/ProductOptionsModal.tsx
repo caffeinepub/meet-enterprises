@@ -8,9 +8,9 @@ import {
 import { ShoppingCart, Tag } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { ProductSummary } from "../backend.d";
 import { useCart } from "../context/CartContext";
 import { useProductById } from "../hooks/useQueries";
+import type { ProductSummary } from "../types";
 import { formatPrice, uint8ToDataUrl } from "../utils/imageUtils";
 
 interface ProductOptionsModalProps {

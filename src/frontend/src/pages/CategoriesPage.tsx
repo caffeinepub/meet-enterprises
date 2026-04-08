@@ -10,13 +10,13 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import type { ProductSummary } from "../backend.d";
 import { ProductCard } from "../components/ProductCard";
 import {
   useCategories,
   useProductRating,
   useProducts,
 } from "../hooks/useQueries";
+import type { ProductSummary } from "../types";
 
 function TrendingProducts({
   products,
@@ -172,9 +172,13 @@ export function CategoriesPage() {
       ) ?? [];
 
     return (
-      <main
+      <motion.main
         className="max-w-2xl mx-auto px-4 sm:px-6 py-8"
         data-ocid="categories.page"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
       >
         <motion.div
           initial={{ opacity: 0, x: 30 }}
@@ -220,14 +224,18 @@ export function CategoriesPage() {
             </div>
           )}
         </motion.div>
-      </main>
+      </motion.main>
     );
   }
 
   return (
-    <main
+    <motion.main
       className="max-w-2xl mx-auto px-4 sm:px-6 py-8"
       data-ocid="categories.page"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
     >
       {/* ── 1. Search Bar with Suggestions ── */}
       <div className="mb-8" ref={searchRef}>
@@ -422,7 +430,7 @@ export function CategoriesPage() {
           categories={categories ?? []}
         />
       )}
-    </main>
+    </motion.main>
   );
 }
 

@@ -1,0 +1,188 @@
+type Voucher = 
+ record {
+   code: text;
+   createdAt: int;
+   id: nat;
+   orderId: text;
+   userId: principal;
+   value: nat;
+ };
+type UserProfile = 
+ record {
+   id: principal;
+   name: text;
+   whatsapp: text;
+ };
+type Scheme = 
+ record {
+   couponCode: text;
+   createdAt: int;
+   description: text;
+   id: nat;
+   title: text;
+ };
+type ReelComment = 
+ record {
+   createdAt: int;
+   id: nat;
+   reelId: nat;
+   "text": text;
+   userId: principal;
+   userName: text;
+ };
+type Reel = 
+ record {
+   createdAt: int;
+   id: nat;
+   productId: opt nat;
+   title: text;
+   videoUrl: text;
+ };
+type RatingSummary = 
+ record {
+   average: float64;
+   count: nat;
+ };
+type ProductSummary = 
+ record {
+   categoryId: nat;
+   colours: vec text;
+   description: text;
+   discountAmount: nat;
+   id: nat;
+   inStock: bool;
+   mrp: nat;
+   name: text;
+   sizes: vec text;
+ };
+type ProductImage = 
+ record {
+   imageData: blob;
+   imageType: text;
+ };
+type Product = 
+ record {
+   categoryId: nat;
+   colours: vec text;
+   description: text;
+   discountAmount: nat;
+   id: nat;
+   image: blob;
+   imageType: text;
+   inStock: bool;
+   mrp: nat;
+   name: text;
+   sizes: vec text;
+ };
+type PaymentSettings = 
+ record {
+   qrImage: blob;
+   qrImageType: text;
+   upiId: text;
+ };
+type OrderItem = 
+ record {
+   price: nat;
+   productId: nat;
+   quantity: nat;
+ };
+type Order = 
+ record {
+   createdAt: int;
+   deliveryLocation: text;
+   id: text;
+   items: vec OrderItem;
+   paymentMethod: text;
+   status: text;
+   totalAmount: nat;
+   userId: principal;
+ };
+type Category = 
+ record {
+   id: nat;
+   name: text;
+ };
+service : {
+  addProductImage: (adminToken: text, productId: nat, imageData: blob,
+   imageType: text) -> (nat);
+  addReelComment: (reelId: nat, "text": text) -> (ReelComment);
+  addToWishlist: (productId: nat) -> ();
+  createCategory: (adminToken: text, name: text) -> (Category);
+  createOrder: (items: vec OrderItem, paymentMethod: text, deliveryLocation:
+   text) -> (Order);
+  createProduct: (adminToken: text, productInfo:
+   record {
+     categoryId: nat;
+     colours: vec text;
+     description: text;
+     discountAmount: nat;
+     image: blob;
+     imageType: text;
+     inStock: bool;
+     mrp: nat;
+     name: text;
+     sizes: vec text;
+   }) -> (ProductSummary);
+  createReel: (adminToken: text, title: text, videoUrl: text, productId:
+   opt nat) -> (Reel);
+  createScheme: (adminToken: text, title: text, description: text,
+   couponCode: text) -> (Scheme);
+  deleteCategory: (adminToken: text, id: nat) -> ();
+  deleteOrder: (adminToken: text, orderId: text) -> ();
+  deleteProduct: (adminToken: text, id: nat) -> ();
+  deleteReel: (adminToken: text, id: nat) -> ();
+  deleteScheme: (adminToken: text, id: nat) -> ();
+  generateDeliveryCode: (adminToken: text, orderId: text) -> (text);
+  getAllOrders: (adminToken: text) -> (vec Order);
+  getAllUsers: (adminToken: text) -> (vec UserProfile);
+  getAllVouchers: (adminToken: text) -> (vec Voucher);
+  getCallerUserProfile: () -> (opt UserProfile) query;
+  getCategories: () -> (vec Category) query;
+  getDeliveryCode: (adminToken: text, orderId: text) -> (opt text);
+  getInstagramHandle: () -> (text) query;
+  getOrderById: (orderId: text) -> (opt Order) query;
+  getOrderDeliveryCode: (orderId: text) -> (opt text) query;
+  getPaymentSettings: () -> (opt PaymentSettings) query;
+  getProductById: (id: nat) -> (Product) query;
+  getProductImages: (productId: nat) -> (vec ProductImage) query;
+  getProductRating: (productId: nat) -> (RatingSummary) query;
+  getProducts: () -> (vec ProductSummary) query;
+  getReelComments: (reelId: nat) -> (vec ReelComment) query;
+  getReelLikeCount: (reelId: nat) -> (nat) query;
+  getReels: () -> (vec Reel) query;
+  getSchemes: () -> (vec Scheme) query;
+  getTheme: () -> (text) query;
+  getUserOrders: (userId: principal) -> (vec Order) query;
+  getUserProductRating: (productId: nat) -> (opt nat) query;
+  getUserProfile: (user: principal) -> (opt UserProfile) query;
+  getUserVouchers: (userId: principal) -> (vec Voucher) query;
+  getUserWishlist: (userId: principal) -> (vec nat) query;
+  isReelLiked: (reelId: nat, userId: principal) -> (bool) query;
+  likeReel: (reelId: nat) -> ();
+  rateProduct: (productId: nat, rating: nat) -> ();
+  removeFromWishlist: (productId: nat) -> ();
+  removeProductImage: (adminToken: text, productId: nat, imageIndex: 
+   nat) -> ();
+  saveCallerUserProfile: (name: text, whatsapp: text) -> ();
+  setInstagramHandle: (adminToken: text, handle: text) -> ();
+  setPaymentSettings: (adminToken: text, upiId: text, qrImage: blob,
+   qrImageType: text) -> ();
+  setTheme: (adminToken: text, themeId: text) -> ();
+  unlikeReel: (reelId: nat) -> ();
+  updateCategory: (adminToken: text, id: nat, name: text) -> (Category);
+  updateOrderStatus: (adminToken: text, orderId: text, status: text) -> ();
+  updateProduct: (adminToken: text, id: nat, productInfo:
+   record {
+     categoryId: nat;
+     colours: vec text;
+     description: text;
+     discountAmount: nat;
+     image: blob;
+     imageType: text;
+     inStock: bool;
+     mrp: nat;
+     name: text;
+     sizes: vec text;
+   }) -> (ProductSummary);
+  verifyDeliveryCode: (orderId: text, code: text) -> (bool);
+}

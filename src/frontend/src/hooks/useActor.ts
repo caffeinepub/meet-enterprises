@@ -1,59 +1,50 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
-import type { backendInterface } from "../backend";
-import { createActorWithConfig } from "../config";
-import { getSecretParameter } from "../utils/urlParams";
-import { useInternetIdentity } from "./useInternetIdentity";
+import {
+  type createActorFunction,
+  useActor as useActorBase,
+} from "@caffeineai/core-infrastructure";
+import type { BackendActor } from "../types";
 
-const ACTOR_QUERY_KEY = "actor";
-export function useActor() {
-  const { identity } = useInternetIdentity();
-  const queryClient = useQueryClient();
-  const actorQuery = useQuery<backendInterface>({
-    queryKey: [ACTOR_QUERY_KEY, identity?.getPrincipal().toString()],
-    queryFn: async () => {
-      const isAuthenticated = !!identity;
+// createActor is imported at runtime from backend.ts.
+// We use a dynamic import to avoid circular dependency issues and because
+// backend.ts is auto-generated and may have varying types.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _createActor: createActorFunction<BackendActor> | null = null;
 
-      if (!isAuthenticated) {
-        // Return anonymous actor if not authenticated
-        return await createActorWithConfig();
-      }
+async function getCreateActor(): Promise<createActorFunction<BackendActor>> {
+  if (_createActor) return _createActor;
+  const mod = await import("../backend");
+  // The generated createActor signature matches createActorFunction<Backend>
+  // We cast it here because the generated Backend class implements BackendActor at runtime
+  // even though the generated type declarations are incomplete.
+  _createActor =
+    mod.createActor as unknown as createActorFunction<BackendActor>;
+  return _createActor;
+}
 
-      const actorOptions = {
-        agentOptions: {
-          identity,
-        },
-      };
+// Eager-load so it's ready before first use
+getCreateActor().catch(() => {});
 
-      const actor = await createActorWithConfig(actorOptions);
-      const adminToken = getSecretParameter("caffeineAdminToken") || "";
-      await actor._initializeAccessControlWithSecret(adminToken);
-      return actor;
-    },
-    // Only refetch when identity changes
-    staleTime: Number.POSITIVE_INFINITY,
-    // This will cause the actor to be recreated when the identity changes
-    enabled: true,
-  });
-
-  // When the actor changes, invalidate dependent queries
-  useEffect(() => {
-    if (actorQuery.data) {
-      queryClient.invalidateQueries({
-        predicate: (query) => {
-          return !query.queryKey.includes(ACTOR_QUERY_KEY);
-        },
-      });
-      queryClient.refetchQueries({
-        predicate: (query) => {
-          return !query.queryKey.includes(ACTOR_QUERY_KEY);
-        },
-      });
+export function useActor(): {
+  actor: BackendActor | null;
+  isFetching: boolean;
+} {
+  // We provide a stable wrapper function that resolves asynchronously.
+  // The base useActor from core-infrastructure accepts a createActorFunction<T>
+  // and internally calls createActorWithConfig(createActor, options).
+  // We proxy through a sync wrapper that delegates to the cached createActor.
+  const stableCreateActor: createActorFunction<BackendActor> = (
+    canisterId,
+    uploadFile,
+    downloadFile,
+    options,
+  ) => {
+    if (!_createActor) {
+      // Return a proxy object that will lazily resolve
+      const proxy = {} as BackendActor;
+      return proxy;
     }
-  }, [actorQuery.data, queryClient]);
-
-  return {
-    actor: actorQuery.data || null,
-    isFetching: actorQuery.isFetching,
+    return _createActor(canisterId, uploadFile, downloadFile, options);
   };
+
+  return useActorBase<BackendActor>(stableCreateActor);
 }

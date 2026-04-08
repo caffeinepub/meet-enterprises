@@ -54,7 +54,6 @@ import { motion } from "motion/react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { Reel } from "../backend.d";
 import { useActor } from "../hooks/useActor";
 import {
   useAddProductImage,
@@ -81,6 +80,7 @@ import {
   useUpdateOrderStatus,
   useUpdateProduct,
 } from "../hooks/useQueries";
+import type { Reel } from "../types";
 import { getAdminToken, setAdminToken } from "../utils/adminStore";
 import {
   fileToUint8Array,

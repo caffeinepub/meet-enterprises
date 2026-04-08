@@ -5,9 +5,9 @@ import { Heart, ShoppingCart, Star, Tag } from "lucide-react";
 import { motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { Category, ProductSummary } from "../backend.d";
 import { useCart } from "../context/CartContext";
 import { useProductImages, useProductRating } from "../hooks/useQueries";
+import type { Category, ProductSummary } from "../types";
 import { formatPrice, uint8ToDataUrl } from "../utils/imageUtils";
 import { ProductOptionsModal } from "./ProductOptionsModal";
 

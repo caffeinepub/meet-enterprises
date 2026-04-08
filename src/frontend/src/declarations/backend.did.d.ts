@@ -44,10 +44,7 @@ export interface Product {
   'image' : Uint8Array,
   'colours' : Array<string>,
 }
-export interface ProductImage {
-  'imageData' : Uint8Array,
-  'imageType' : string,
-}
+export interface ProductImage { 'imageData' : Uint8Array, 'imageType' : string }
 export interface ProductSummary {
   'id' : bigint,
   'mrp' : bigint,
@@ -58,6 +55,22 @@ export interface ProductSummary {
   'description' : string,
   'sizes' : Array<string>,
   'colours' : Array<string>,
+}
+export interface RatingSummary { 'count' : bigint, 'average' : number }
+export interface Reel {
+  'id' : bigint,
+  'title' : string,
+  'createdAt' : bigint,
+  'productId' : [] | [bigint],
+  'videoUrl' : string,
+}
+export interface ReelComment {
+  'id' : bigint,
+  'userName' : string,
+  'userId' : Principal,
+  'createdAt' : bigint,
+  'text' : string,
+  'reelId' : bigint,
 }
 export interface Scheme {
   'id' : bigint,
@@ -71,9 +84,6 @@ export interface UserProfile {
   'name' : string,
   'whatsapp' : string,
 }
-export type UserRole = { 'admin' : null } |
-  { 'user' : null } |
-  { 'guest' : null };
 export interface Voucher {
   'id' : bigint,
   'value' : bigint,
@@ -82,46 +92,10 @@ export interface Voucher {
   'createdAt' : bigint,
   'orderId' : string,
 }
-export interface _CaffeineStorageCreateCertificateResult {
-  'method' : string,
-  'blob_hash' : string,
-}
-export interface _CaffeineStorageRefillInformation {
-  'proposed_top_up_amount' : [] | [bigint],
-}
-export interface _CaffeineStorageRefillResult {
-  'success' : [] | [boolean],
-  'topped_up_amount' : [] | [bigint],
-}
-export interface Reel {
-  'id' : bigint,
-  'title' : string,
-  'videoUrl' : string,
-  'productId' : [] | [bigint],
-  'createdAt' : bigint,
-}
-export interface RatingSummary {
-  'average' : number,
-  'count' : bigint,
-}
 export interface _SERVICE {
-  '_caffeineStorageBlobIsLive' : ActorMethod<[Uint8Array], boolean>,
-  '_caffeineStorageBlobsToDelete' : ActorMethod<[], Array<Uint8Array>>,
-  '_caffeineStorageConfirmBlobDeletion' : ActorMethod<
-    [Array<Uint8Array>],
-    undefined
-  >,
-  '_caffeineStorageCreateCertificate' : ActorMethod<
-    [string],
-    _CaffeineStorageCreateCertificateResult
-  >,
-  '_caffeineStorageRefillCashier' : ActorMethod<
-    [[] | [_CaffeineStorageRefillInformation]],
-    _CaffeineStorageRefillResult
-  >,
-  '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
-  '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
-  'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'addProductImage' : ActorMethod<[string, bigint, Uint8Array, string], bigint>,
+  'addReelComment' : ActorMethod<[bigint, string], ReelComment>,
+  'addToWishlist' : ActorMethod<[bigint], undefined>,
   'createCategory' : ActorMethod<[string, string], Category>,
   'createOrder' : ActorMethod<[Array<OrderItem>, string, string], Order>,
   'createProduct' : ActorMethod<
@@ -142,47 +116,53 @@ export interface _SERVICE {
     ],
     ProductSummary
   >,
+  'createReel' : ActorMethod<[string, string, string, [] | [bigint]], Reel>,
   'createScheme' : ActorMethod<[string, string, string, string], Scheme>,
   'deleteCategory' : ActorMethod<[string, bigint], undefined>,
+  'deleteOrder' : ActorMethod<[string, string], undefined>,
   'deleteProduct' : ActorMethod<[string, bigint], undefined>,
+  'deleteReel' : ActorMethod<[string, bigint], undefined>,
   'deleteScheme' : ActorMethod<[string, bigint], undefined>,
+  'generateDeliveryCode' : ActorMethod<[string, string], string>,
   'getAllOrders' : ActorMethod<[string], Array<Order>>,
   'getAllUsers' : ActorMethod<[string], Array<UserProfile>>,
   'getAllVouchers' : ActorMethod<[string], Array<Voucher>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
-  'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getCategories' : ActorMethod<[], Array<Category>>,
+  'getDeliveryCode' : ActorMethod<[string, string], [] | [string]>,
+  'getInstagramHandle' : ActorMethod<[], string>,
   'getOrderById' : ActorMethod<[string], [] | [Order]>,
+  'getOrderDeliveryCode' : ActorMethod<[string], [] | [string]>,
   'getPaymentSettings' : ActorMethod<[], [] | [PaymentSettings]>,
   'getProductById' : ActorMethod<[bigint], Product>,
   'getProductImages' : ActorMethod<[bigint], Array<ProductImage>>,
-  'addProductImage' : ActorMethod<[string, bigint, Uint8Array, string], bigint>,
-  'removeProductImage' : ActorMethod<[string, bigint, bigint], undefined>,
+  'getProductRating' : ActorMethod<[bigint], RatingSummary>,
   'getProducts' : ActorMethod<[], Array<ProductSummary>>,
+  'getReelComments' : ActorMethod<[bigint], Array<ReelComment>>,
+  'getReelLikeCount' : ActorMethod<[bigint], bigint>,
+  'getReels' : ActorMethod<[], Array<Reel>>,
   'getSchemes' : ActorMethod<[], Array<Scheme>>,
+  'getTheme' : ActorMethod<[], string>,
   'getUserOrders' : ActorMethod<[Principal], Array<Order>>,
+  'getUserProductRating' : ActorMethod<[bigint], [] | [bigint]>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'getUserVouchers' : ActorMethod<[Principal], Array<Voucher>>,
-  'isCallerAdmin' : ActorMethod<[], boolean>,
+  'getUserWishlist' : ActorMethod<[Principal], Array<bigint>>,
+  'isReelLiked' : ActorMethod<[bigint, Principal], boolean>,
+  'likeReel' : ActorMethod<[bigint], undefined>,
+  'rateProduct' : ActorMethod<[bigint, bigint], undefined>,
+  'removeFromWishlist' : ActorMethod<[bigint], undefined>,
+  'removeProductImage' : ActorMethod<[string, bigint, bigint], undefined>,
   'saveCallerUserProfile' : ActorMethod<[string, string], undefined>,
-  'setPaymentSettings' : ActorMethod<[string, string, Uint8Array, string], undefined>,
+  'setInstagramHandle' : ActorMethod<[string, string], undefined>,
+  'setPaymentSettings' : ActorMethod<
+    [string, string, Uint8Array, string],
+    undefined
+  >,
+  'setTheme' : ActorMethod<[string, string], undefined>,
+  'unlikeReel' : ActorMethod<[bigint], undefined>,
   'updateCategory' : ActorMethod<[string, bigint, string], Category>,
   'updateOrderStatus' : ActorMethod<[string, string, string], undefined>,
-  'createReel' : ActorMethod<[string, string, string, [] | [bigint]], Reel>,
-  'deleteReel' : ActorMethod<[string, bigint], undefined>,
-  'generateDeliveryCode' : ActorMethod<[string, string], string>,
-  'getDeliveryCode' : ActorMethod<[string, string], [] | [string]>,
-  'getProductRating' : ActorMethod<[bigint], RatingSummary>,
-  'getInstagramHandle' : ActorMethod<[], string>,
-  'getOrderDeliveryCode' : ActorMethod<[string], [] | [string]>,
-  'getReels' : ActorMethod<[], Array<Reel>>,
-  'setInstagramHandle' : ActorMethod<[string, string], undefined>,
-  'getTheme' : ActorMethod<[], string>,
-  'getUserWishlist' : ActorMethod<[Principal], Array<bigint>>,
-  'rateProduct' : ActorMethod<[bigint, bigint], undefined>,
-  'setTheme' : ActorMethod<[string, string], undefined>,
-  'verifyDeliveryCode' : ActorMethod<[string, string], boolean>,
-  'deleteOrder' : ActorMethod<[string, string], undefined>,
   'updateProduct' : ActorMethod<
     [
       string,
@@ -202,6 +182,7 @@ export interface _SERVICE {
     ],
     ProductSummary
   >,
+  'verifyDeliveryCode' : ActorMethod<[string, string], boolean>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

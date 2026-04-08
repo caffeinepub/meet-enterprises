@@ -10,7 +10,9 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { AuthModal } from "./components/AuthModal";
 import { BottomNav } from "./components/BottomNav";
+import { CursorOrb } from "./components/CursorOrb";
 import { Footer } from "./components/Footer";
+import { GlobalParticles } from "./components/GlobalParticles";
 import { Navbar } from "./components/Navbar";
 import { SplashScreen } from "./components/SplashScreen";
 import { CartProvider } from "./context/CartContext";
@@ -152,7 +154,9 @@ export default function App() {
 
   return (
     <CartProvider>
+      <GlobalParticles />
       <RouterProvider router={router} />
+      <CursorOrb />
       <Toaster richColors position="top-center" />
     </CartProvider>
   );

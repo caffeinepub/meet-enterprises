@@ -8,21 +8,13 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
-export const _CaffeineStorageCreateCertificateResult = IDL.Record({
-  'method' : IDL.Text,
-  'blob_hash' : IDL.Text,
-});
-export const _CaffeineStorageRefillInformation = IDL.Record({
-  'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
-});
-export const _CaffeineStorageRefillResult = IDL.Record({
-  'success' : IDL.Opt(IDL.Bool),
-  'topped_up_amount' : IDL.Opt(IDL.Nat),
-});
-export const UserRole = IDL.Variant({
-  'admin' : IDL.Null,
-  'user' : IDL.Null,
-  'guest' : IDL.Null,
+export const ReelComment = IDL.Record({
+  'id' : IDL.Nat,
+  'userName' : IDL.Text,
+  'userId' : IDL.Principal,
+  'createdAt' : IDL.Int,
+  'text' : IDL.Text,
+  'reelId' : IDL.Nat,
 });
 export const Category = IDL.Record({ 'id' : IDL.Nat, 'name' : IDL.Text });
 export const OrderItem = IDL.Record({
@@ -40,24 +32,6 @@ export const Order = IDL.Record({
   'totalAmount' : IDL.Nat,
   'items' : IDL.Vec(OrderItem),
 });
-export const Product = IDL.Record({
-  'id' : IDL.Nat,
-  'mrp' : IDL.Nat,
-  'categoryId' : IDL.Nat,
-  'inStock' : IDL.Bool,
-  'imageType' : IDL.Text,
-  'discountAmount' : IDL.Nat,
-  'name' : IDL.Text,
-  'description' : IDL.Text,
-  'sizes' : IDL.Vec(IDL.Text),
-  'image' : IDL.Vec(IDL.Nat8),
-  'colours' : IDL.Vec(IDL.Text),
-});
-export const ProductImage = IDL.Record({
-  'imageData' : IDL.Vec(IDL.Nat8),
-  'imageType' : IDL.Text,
-});
-// Lightweight summary returned by getProducts(), createProduct(), updateProduct()
 export const ProductSummary = IDL.Record({
   'id' : IDL.Nat,
   'mrp' : IDL.Nat,
@@ -68,6 +42,13 @@ export const ProductSummary = IDL.Record({
   'description' : IDL.Text,
   'sizes' : IDL.Vec(IDL.Text),
   'colours' : IDL.Vec(IDL.Text),
+});
+export const Reel = IDL.Record({
+  'id' : IDL.Nat,
+  'title' : IDL.Text,
+  'createdAt' : IDL.Int,
+  'productId' : IDL.Opt(IDL.Nat),
+  'videoUrl' : IDL.Text,
 });
 export const Scheme = IDL.Record({
   'id' : IDL.Nat,
@@ -94,50 +75,36 @@ export const PaymentSettings = IDL.Record({
   'qrImageType' : IDL.Text,
   'upiId' : IDL.Text,
 });
-
-
-export const Reel = IDL.Record({
+export const Product = IDL.Record({
   'id' : IDL.Nat,
-  'title' : IDL.Text,
-  'videoUrl' : IDL.Text,
-  'productId' : IDL.Opt(IDL.Nat),
-  'createdAt' : IDL.Int,
+  'mrp' : IDL.Nat,
+  'categoryId' : IDL.Nat,
+  'inStock' : IDL.Bool,
+  'imageType' : IDL.Text,
+  'discountAmount' : IDL.Nat,
+  'name' : IDL.Text,
+  'description' : IDL.Text,
+  'sizes' : IDL.Vec(IDL.Text),
+  'image' : IDL.Vec(IDL.Nat8),
+  'colours' : IDL.Vec(IDL.Text),
 });
-
+export const ProductImage = IDL.Record({
+  'imageData' : IDL.Vec(IDL.Nat8),
+  'imageType' : IDL.Text,
+});
 export const RatingSummary = IDL.Record({
-  'average' : IDL.Float64,
   'count' : IDL.Nat,
+  'average' : IDL.Float64,
 });
 
 export const idlService = IDL.Service({
-  '_caffeineStorageBlobIsLive' : IDL.Func(
-      [IDL.Vec(IDL.Nat8)],
-      [IDL.Bool],
-      ['query'],
-    ),
-  '_caffeineStorageBlobsToDelete' : IDL.Func(
-      [],
-      [IDL.Vec(IDL.Vec(IDL.Nat8))],
-      ['query'],
-    ),
-  '_caffeineStorageConfirmBlobDeletion' : IDL.Func(
-      [IDL.Vec(IDL.Vec(IDL.Nat8))],
-      [],
+  'addProductImage' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Vec(IDL.Nat8), IDL.Text],
+      [IDL.Nat],
       [],
     ),
-  '_caffeineStorageCreateCertificate' : IDL.Func(
-      [IDL.Text],
-      [_CaffeineStorageCreateCertificateResult],
-      [],
-    ),
-  '_caffeineStorageRefillCashier' : IDL.Func(
-      [IDL.Opt(_CaffeineStorageRefillInformation)],
-      [_CaffeineStorageRefillResult],
-      [],
-    ),
-  '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
-  '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-  'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'addReelComment' : IDL.Func([IDL.Nat, IDL.Text], [ReelComment], []),
+  'addToWishlist' : IDL.Func([IDL.Nat], [], []),
   'createCategory' : IDL.Func([IDL.Text, IDL.Text], [Category], []),
   'createOrder' : IDL.Func(
       [IDL.Vec(OrderItem), IDL.Text, IDL.Text],
@@ -163,42 +130,64 @@ export const idlService = IDL.Service({
       [ProductSummary],
       [],
     ),
-  'createScheme' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text], [Scheme], []),
+  'createReel' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Opt(IDL.Nat)],
+      [Reel],
+      [],
+    ),
+  'createScheme' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+      [Scheme],
+      [],
+    ),
   'deleteCategory' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+  'deleteOrder' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'deleteProduct' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+  'deleteReel' : IDL.Func([IDL.Text, IDL.Nat], [], []),
   'deleteScheme' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+  'generateDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
   'getAllOrders' : IDL.Func([IDL.Text], [IDL.Vec(Order)], []),
   'getAllUsers' : IDL.Func([IDL.Text], [IDL.Vec(UserProfile)], []),
   'getAllVouchers' : IDL.Func([IDL.Text], [IDL.Vec(Voucher)], []),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
-  'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getCategories' : IDL.Func([], [IDL.Vec(Category)], ['query']),
+  'getDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(IDL.Text)], []),
+  'getInstagramHandle' : IDL.Func([], [IDL.Text], ['query']),
   'getOrderById' : IDL.Func([IDL.Text], [IDL.Opt(Order)], ['query']),
+  'getOrderDeliveryCode' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
   'getPaymentSettings' : IDL.Func([], [IDL.Opt(PaymentSettings)], ['query']),
   'getProductById' : IDL.Func([IDL.Nat], [Product], ['query']),
   'getProductImages' : IDL.Func([IDL.Nat], [IDL.Vec(ProductImage)], ['query']),
-  'addProductImage' : IDL.Func([IDL.Text, IDL.Nat, IDL.Vec(IDL.Nat8), IDL.Text], [IDL.Nat], []),
-  'removeProductImage' : IDL.Func([IDL.Text, IDL.Nat, IDL.Nat], [], []),
+  'getProductRating' : IDL.Func([IDL.Nat], [RatingSummary], ['query']),
   'getProducts' : IDL.Func([], [IDL.Vec(ProductSummary)], ['query']),
+  'getReelComments' : IDL.Func([IDL.Nat], [IDL.Vec(ReelComment)], ['query']),
+  'getReelLikeCount' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
+  'getReels' : IDL.Func([], [IDL.Vec(Reel)], ['query']),
   'getSchemes' : IDL.Func([], [IDL.Vec(Scheme)], ['query']),
+  'getTheme' : IDL.Func([], [IDL.Text], ['query']),
   'getUserOrders' : IDL.Func([IDL.Principal], [IDL.Vec(Order)], ['query']),
+  'getUserProductRating' : IDL.Func([IDL.Nat], [IDL.Opt(IDL.Nat)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
-  'getUserVouchers' : IDL.Func(
-      [IDL.Principal],
-      [IDL.Vec(Voucher)],
-      ['query'],
-    ),
-  'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'getUserVouchers' : IDL.Func([IDL.Principal], [IDL.Vec(Voucher)], ['query']),
+  'getUserWishlist' : IDL.Func([IDL.Principal], [IDL.Vec(IDL.Nat)], ['query']),
+  'isReelLiked' : IDL.Func([IDL.Nat, IDL.Principal], [IDL.Bool], ['query']),
+  'likeReel' : IDL.Func([IDL.Nat], [], []),
+  'rateProduct' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
+  'removeFromWishlist' : IDL.Func([IDL.Nat], [], []),
+  'removeProductImage' : IDL.Func([IDL.Text, IDL.Nat, IDL.Nat], [], []),
   'saveCallerUserProfile' : IDL.Func([IDL.Text, IDL.Text], [], []),
+  'setInstagramHandle' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'setPaymentSettings' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Vec(IDL.Nat8), IDL.Text],
       [],
       [],
     ),
+  'setTheme' : IDL.Func([IDL.Text, IDL.Text], [], []),
+  'unlikeReel' : IDL.Func([IDL.Nat], [], []),
   'updateCategory' : IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [Category], []),
   'updateOrderStatus' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
   'updateProduct' : IDL.Func(
@@ -221,39 +210,19 @@ export const idlService = IDL.Service({
       [ProductSummary],
       [],
     ),
-  'createReel' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Opt(IDL.Nat)], [Reel], []),
-  'deleteReel' : IDL.Func([IDL.Text, IDL.Nat], [], []),
-  'generateDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
-  'getDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
-  'getProductRating' : IDL.Func([IDL.Nat], [RatingSummary], ['query']),
-  'getInstagramHandle' : IDL.Func([], [IDL.Text], ['query']),
-  'getOrderDeliveryCode' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
-  'getReels' : IDL.Func([], [IDL.Vec(Reel)], ['query']),
-  'setInstagramHandle' : IDL.Func([IDL.Text, IDL.Text], [], []),
-  'getTheme' : IDL.Func([], [IDL.Text], ['query']),
-  'getUserWishlist' : IDL.Func([IDL.Principal], [IDL.Vec(IDL.Nat)], ['query']),
-  'rateProduct' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
-  'setTheme' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'verifyDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
-  'deleteOrder' : IDL.Func([IDL.Text, IDL.Text], [], []),
 });
 
+export const idlInitArgs = [];
+
 export const idlFactory = ({ IDL }) => {
-  const _CaffeineStorageCreateCertificateResult = IDL.Record({
-    'method' : IDL.Text,
-    'blob_hash' : IDL.Text,
-  });
-  const _CaffeineStorageRefillInformation = IDL.Record({
-    'proposed_top_up_amount' : IDL.Opt(IDL.Nat),
-  });
-  const _CaffeineStorageRefillResult = IDL.Record({
-    'success' : IDL.Opt(IDL.Bool),
-    'topped_up_amount' : IDL.Opt(IDL.Nat),
-  });
-  const UserRole = IDL.Variant({
-    'admin' : IDL.Null,
-    'user' : IDL.Null,
-    'guest' : IDL.Null,
+  const ReelComment = IDL.Record({
+    'id' : IDL.Nat,
+    'userName' : IDL.Text,
+    'userId' : IDL.Principal,
+    'createdAt' : IDL.Int,
+    'text' : IDL.Text,
+    'reelId' : IDL.Nat,
   });
   const Category = IDL.Record({ 'id' : IDL.Nat, 'name' : IDL.Text });
   const OrderItem = IDL.Record({
@@ -271,23 +240,6 @@ export const idlFactory = ({ IDL }) => {
     'totalAmount' : IDL.Nat,
     'items' : IDL.Vec(OrderItem),
   });
-  const Product = IDL.Record({
-    'id' : IDL.Nat,
-    'mrp' : IDL.Nat,
-    'categoryId' : IDL.Nat,
-    'inStock' : IDL.Bool,
-    'imageType' : IDL.Text,
-    'discountAmount' : IDL.Nat,
-    'name' : IDL.Text,
-    'description' : IDL.Text,
-    'sizes' : IDL.Vec(IDL.Text),
-    'image' : IDL.Vec(IDL.Nat8),
-    'colours' : IDL.Vec(IDL.Text),
-  });
-  const ProductImage = IDL.Record({
-    'imageData' : IDL.Vec(IDL.Nat8),
-    'imageType' : IDL.Text,
-  });
   const ProductSummary = IDL.Record({
     'id' : IDL.Nat,
     'mrp' : IDL.Nat,
@@ -298,6 +250,13 @@ export const idlFactory = ({ IDL }) => {
     'description' : IDL.Text,
     'sizes' : IDL.Vec(IDL.Text),
     'colours' : IDL.Vec(IDL.Text),
+  });
+  const Reel = IDL.Record({
+    'id' : IDL.Nat,
+    'title' : IDL.Text,
+    'createdAt' : IDL.Int,
+    'productId' : IDL.Opt(IDL.Nat),
+    'videoUrl' : IDL.Text,
   });
   const Scheme = IDL.Record({
     'id' : IDL.Nat,
@@ -324,48 +283,36 @@ export const idlFactory = ({ IDL }) => {
     'qrImageType' : IDL.Text,
     'upiId' : IDL.Text,
   });
-  const Reel = IDL.Record({
+  const Product = IDL.Record({
     'id' : IDL.Nat,
-    'title' : IDL.Text,
-    'videoUrl' : IDL.Text,
-    'productId' : IDL.Opt(IDL.Nat),
-    'createdAt' : IDL.Int,
+    'mrp' : IDL.Nat,
+    'categoryId' : IDL.Nat,
+    'inStock' : IDL.Bool,
+    'imageType' : IDL.Text,
+    'discountAmount' : IDL.Nat,
+    'name' : IDL.Text,
+    'description' : IDL.Text,
+    'sizes' : IDL.Vec(IDL.Text),
+    'image' : IDL.Vec(IDL.Nat8),
+    'colours' : IDL.Vec(IDL.Text),
+  });
+  const ProductImage = IDL.Record({
+    'imageData' : IDL.Vec(IDL.Nat8),
+    'imageType' : IDL.Text,
   });
   const RatingSummary = IDL.Record({
-    'average' : IDL.Float64,
     'count' : IDL.Nat,
+    'average' : IDL.Float64,
   });
-
   
   return IDL.Service({
-    '_caffeineStorageBlobIsLive' : IDL.Func(
-        [IDL.Vec(IDL.Nat8)],
-        [IDL.Bool],
-        ['query'],
-      ),
-    '_caffeineStorageBlobsToDelete' : IDL.Func(
-        [],
-        [IDL.Vec(IDL.Vec(IDL.Nat8))],
-        ['query'],
-      ),
-    '_caffeineStorageConfirmBlobDeletion' : IDL.Func(
-        [IDL.Vec(IDL.Vec(IDL.Nat8))],
-        [],
+    'addProductImage' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Vec(IDL.Nat8), IDL.Text],
+        [IDL.Nat],
         [],
       ),
-    '_caffeineStorageCreateCertificate' : IDL.Func(
-        [IDL.Text],
-        [_CaffeineStorageCreateCertificateResult],
-        [],
-      ),
-    '_caffeineStorageRefillCashier' : IDL.Func(
-        [IDL.Opt(_CaffeineStorageRefillInformation)],
-        [_CaffeineStorageRefillResult],
-        [],
-      ),
-    '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
-    '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-    'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'addReelComment' : IDL.Func([IDL.Nat, IDL.Text], [ReelComment], []),
+    'addToWishlist' : IDL.Func([IDL.Nat], [], []),
     'createCategory' : IDL.Func([IDL.Text, IDL.Text], [Category], []),
     'createOrder' : IDL.Func(
         [IDL.Vec(OrderItem), IDL.Text, IDL.Text],
@@ -391,25 +338,51 @@ export const idlFactory = ({ IDL }) => {
         [ProductSummary],
         [],
       ),
-    'createScheme' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Text], [Scheme], []),
+    'createReel' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Opt(IDL.Nat)],
+        [Reel],
+        [],
+      ),
+    'createScheme' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+        [Scheme],
+        [],
+      ),
     'deleteCategory' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+    'deleteOrder' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'deleteProduct' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+    'deleteReel' : IDL.Func([IDL.Text, IDL.Nat], [], []),
     'deleteScheme' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+    'generateDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
     'getAllOrders' : IDL.Func([IDL.Text], [IDL.Vec(Order)], []),
     'getAllUsers' : IDL.Func([IDL.Text], [IDL.Vec(UserProfile)], []),
     'getAllVouchers' : IDL.Func([IDL.Text], [IDL.Vec(Voucher)], []),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
-    'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getCategories' : IDL.Func([], [IDL.Vec(Category)], ['query']),
+    'getDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(IDL.Text)], []),
+    'getInstagramHandle' : IDL.Func([], [IDL.Text], ['query']),
     'getOrderById' : IDL.Func([IDL.Text], [IDL.Opt(Order)], ['query']),
+    'getOrderDeliveryCode' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(IDL.Text)],
+        ['query'],
+      ),
     'getPaymentSettings' : IDL.Func([], [IDL.Opt(PaymentSettings)], ['query']),
     'getProductById' : IDL.Func([IDL.Nat], [Product], ['query']),
-    'getProductImages' : IDL.Func([IDL.Nat], [IDL.Vec(ProductImage)], ['query']),
-    'addProductImage' : IDL.Func([IDL.Text, IDL.Nat, IDL.Vec(IDL.Nat8), IDL.Text], [IDL.Nat], []),
-    'removeProductImage' : IDL.Func([IDL.Text, IDL.Nat, IDL.Nat], [], []),
+    'getProductImages' : IDL.Func(
+        [IDL.Nat],
+        [IDL.Vec(ProductImage)],
+        ['query'],
+      ),
+    'getProductRating' : IDL.Func([IDL.Nat], [RatingSummary], ['query']),
     'getProducts' : IDL.Func([], [IDL.Vec(ProductSummary)], ['query']),
+    'getReelComments' : IDL.Func([IDL.Nat], [IDL.Vec(ReelComment)], ['query']),
+    'getReelLikeCount' : IDL.Func([IDL.Nat], [IDL.Nat], ['query']),
+    'getReels' : IDL.Func([], [IDL.Vec(Reel)], ['query']),
     'getSchemes' : IDL.Func([], [IDL.Vec(Scheme)], ['query']),
+    'getTheme' : IDL.Func([], [IDL.Text], ['query']),
     'getUserOrders' : IDL.Func([IDL.Principal], [IDL.Vec(Order)], ['query']),
+    'getUserProductRating' : IDL.Func([IDL.Nat], [IDL.Opt(IDL.Nat)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
@@ -420,13 +393,25 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(Voucher)],
         ['query'],
       ),
-    'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'getUserWishlist' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Vec(IDL.Nat)],
+        ['query'],
+      ),
+    'isReelLiked' : IDL.Func([IDL.Nat, IDL.Principal], [IDL.Bool], ['query']),
+    'likeReel' : IDL.Func([IDL.Nat], [], []),
+    'rateProduct' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
+    'removeFromWishlist' : IDL.Func([IDL.Nat], [], []),
+    'removeProductImage' : IDL.Func([IDL.Text, IDL.Nat, IDL.Nat], [], []),
     'saveCallerUserProfile' : IDL.Func([IDL.Text, IDL.Text], [], []),
+    'setInstagramHandle' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'setPaymentSettings' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Vec(IDL.Nat8), IDL.Text],
         [],
         [],
       ),
+    'setTheme' : IDL.Func([IDL.Text, IDL.Text], [], []),
+    'unlikeReel' : IDL.Func([IDL.Nat], [], []),
     'updateCategory' : IDL.Func([IDL.Text, IDL.Nat, IDL.Text], [Category], []),
     'updateOrderStatus' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
     'updateProduct' : IDL.Func(
@@ -449,21 +434,7 @@ export const idlFactory = ({ IDL }) => {
         [ProductSummary],
         [],
       ),
-    'createReel' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Opt(IDL.Nat)], [Reel], []),
-    'deleteReel' : IDL.Func([IDL.Text, IDL.Nat], [], []),
-    'generateDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
-    'getDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
-    'getProductRating' : IDL.Func([IDL.Nat], [RatingSummary], ['query']),
-    'getInstagramHandle' : IDL.Func([], [IDL.Text], ['query']),
-    'getOrderDeliveryCode' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
-    'getReels' : IDL.Func([], [IDL.Vec(Reel)], ['query']),
-    'setInstagramHandle' : IDL.Func([IDL.Text, IDL.Text], [], []),
-    'getTheme' : IDL.Func([], [IDL.Text], ['query']),
-    'getUserWishlist' : IDL.Func([IDL.Principal], [IDL.Vec(IDL.Nat)], ['query']),
-    'rateProduct' : IDL.Func([IDL.Nat, IDL.Nat], [], []),
-    'setTheme' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'verifyDeliveryCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
-    'deleteOrder' : IDL.Func([IDL.Text, IDL.Text], [], []),
   });
 };
 

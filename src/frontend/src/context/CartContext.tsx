@@ -1,5 +1,5 @@
 import { type ReactNode, createContext, useContext, useState } from "react";
-import type { ProductSummary } from "../backend.d";
+import type { ProductSummary } from "../types";
 
 export interface CartItem {
   product: ProductSummary;

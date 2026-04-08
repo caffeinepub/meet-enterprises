@@ -11,7 +11,7 @@ import type {
   Scheme,
   UserProfile,
   Voucher,
-} from "../backend.d";
+} from "../types";
 import { getAdminToken } from "../utils/adminStore";
 import { useActor } from "./useActor";
 

@@ -4,10 +4,10 @@ import { Heart, MessageCircle, Send, ShoppingBag } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Component, type ReactNode, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { Reel, ReelComment } from "../backend.d";
 import { useActor } from "../hooks/useActor";
 import { useLocalProfile } from "../hooks/useLocalProfile";
 import { useProducts, useReels } from "../hooks/useQueries";
+import type { Reel, ReelComment } from "../types";
 
 function timeAgo(ns: bigint): string {
   const ms = Number(ns) / 1_000_000;
