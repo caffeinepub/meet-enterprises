@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { ProductCard } from "../components/ProductCard";
 import { ThreeHero } from "../components/ThreeHero";
+import { TshirtMascot } from "../components/TshirtMascot";
 import { useProducts } from "../hooks/useQueries";
 
 export function HomePage() {
@@ -40,6 +41,7 @@ export function HomePage() {
     >
       {/* Hero */}
       <section
+        id="hero-section"
         className="relative min-h-[85vh] flex items-center justify-center overflow-hidden"
         style={{
           backgroundImage: `linear-gradient(to bottom, oklch(0.06 0.004 230 / 0.7), oklch(0.09 0.004 230)), url('/assets/generated/hero-bg.dim_1400x700.jpg')`,
@@ -49,6 +51,9 @@ export function HomePage() {
       >
         {/* Three.js 3D background */}
         <ThreeHero />
+
+        {/* T-shirt mascot sitting on "Y" of "Your" in hero heading */}
+        <TshirtMascot heroMode={true} />
 
         <motion.div
           initial={{ opacity: 0, y: 40 }}

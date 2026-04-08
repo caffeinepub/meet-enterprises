@@ -1,4 +1,4 @@
-// Version: 3.0.0
+// Version: 1.0.0
 type Category__164941945 = {id : Nat; name : Text};
 type Data__791452850<K, V> =
   {var count : Nat__490723111; kvs : [var ?(K, V)]};
@@ -9,24 +9,6 @@ type Nat__490723111 = Nat__920180692;
 type Nat__920180692 = Nat;
 type Node__46230540<K, V> =
   {#internal : Internal__8484328<K, V>; #leaf : Leaf__809889148<K, V>};
-type OldAccessControlState__841599830 =
-  {
-    var adminAssigned : Bool;
-    userRoles : OldMap__30246564<Principal, OldUserRole__889293160>
-  };
-type OldMapData__186169172<K, V> = {var count : Nat; kvs : [var ?(K, V)]};
-type OldMapNode__228997390<K, V> =
-  {
-    #internal :
-      {
-        children : [var ?OldMapNode__228997390<K, V>];
-        data : OldMapData__186169172<K, V>
-      };
-    #leaf : {data : OldMapData__186169172<K, V>}
-  };
-type OldMap__30246564<K, V> =
-  {var root : OldMapNode__228997390<K, V>; var size : Nat};
-type OldUserRole__889293160 = {#admin; #guest; #user};
 type OrderItem__592186033 = {price : Nat; productId : Nat; quantity : Nat};
 type Order__762448211 =
   {
@@ -93,94 +75,7 @@ type Voucher__468930896 =
     userId : Principal;
     value : Nat
   };
-actor ({
-  stable ADMIN_CODE : Text;
-  stable var _nextCategoryId : Nat;
-  stable var _nextCommentId : Nat;
-  stable var _nextProductId : Nat;
-  stable var _nextReelId : Nat;
-  stable var _nextSchemeId : Nat;
-  stable var _nextVoucherId : Nat;
-  stable var _stableAdditionalImages : [(Nat, [ProductImage__146763295])];
-  stable var _stableCategories : [(Nat, Category__164941945)];
-  stable var _stableDeliveryCodes : [(Text, Text)];
-  stable var _stableOrders : [(Text, Order__762448211)];
-  stable var _stableProducts : [(Nat, Product__853085059)];
-  stable var _stableRatings : [(Text, ProductRating__157640034)];
-  stable var _stableReelComments : [(Text, ReelComment__1052721674)];
-  stable var _stableReelLikes : [(Text, Bool)];
-  stable var _stableReels : [(Nat, Reel__64617608)];
-  stable var _stableSchemes : [(Nat, Scheme__568532056)];
-  stable var _stableUserProfiles : [(Principal, UserProfile__491224006)];
-  stable var _stableVouchers : [(Nat, Voucher__468930896)];
-  stable var _stableWishlists : [(Principal, [Nat])];
-  in accessControlState : OldAccessControlState__841599830;
-  stable additionalImages :
-    {
-      var root : Node__46230540<Nat, [ProductImage__146763295]>;
-      var size : Nat__490723111
-    };
-  stable categories :
-    {
-      var root : Node__46230540<Nat, Category__164941945>;
-      var size : Nat__490723111
-    };
-  stable var currentTheme : Text;
-  stable deliveryCodes :
-    {var root : Node__46230540<Text, Text>; var size : Nat__490723111};
-  stable var instagramHandle : Text;
-  stable var nextCategoryId : Nat;
-  stable var nextCommentId : Nat;
-  stable var nextProductId : Nat;
-  stable var nextReelId : Nat;
-  stable var nextSchemeId : Nat;
-  stable var nextVoucherId : Nat;
-  stable orders :
-    {
-      var root : Node__46230540<Text, Order__762448211>;
-      var size : Nat__490723111
-    };
-  stable var paymentSettings : ?PaymentSettings__908251257;
-  stable products :
-    {
-      var root : Node__46230540<Nat, Product__853085059>;
-      var size : Nat__490723111
-    };
-  stable ratings :
-    {
-      var root : Node__46230540<Text, ProductRating__157640034>;
-      var size : Nat__490723111
-    };
-  stable reelComments :
-    {
-      var root : Node__46230540<Text, ReelComment__1052721674>;
-      var size : Nat__490723111
-    };
-  stable reelLikes :
-    {var root : Node__46230540<Text, Bool>; var size : Nat__490723111};
-  stable reels :
-    {
-      var root : Node__46230540<Nat, Reel__64617608>;
-      var size : Nat__490723111
-    };
-  stable schemes :
-    {
-      var root : Node__46230540<Nat, Scheme__568532056>;
-      var size : Nat__490723111
-    };
-  stable userProfiles :
-    {
-      var root : Node__46230540<Principal, UserProfile__491224006>;
-      var size : Nat__490723111
-    };
-  stable vouchers :
-    {
-      var root : Node__46230540<Nat, Voucher__468930896>;
-      var size : Nat__490723111
-    };
-  stable wishlists :
-    {var root : Node__46230540<Principal, [Nat]>; var size : Nat__490723111}
-}, {
+actor {
   stable ADMIN_CODE : Text;
   stable var _nextCategoryId : Nat;
   stable var _nextCommentId : Nat;
@@ -266,4 +161,4 @@ actor ({
     };
   stable wishlists :
     {var root : Node__46230540<Principal, [Nat]>; var size : Nat__490723111}
-}) ;
+};

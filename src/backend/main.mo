@@ -9,9 +9,9 @@ import Runtime "mo:core/Runtime";
 import Blob "mo:core/Blob";
 import Float "mo:core/Float";
 import Int "mo:core/Int";
-import Migration "migration";
 
-(with migration = Migration.run)
+
+
 actor {
 
   let ADMIN_CODE : Text = "2537";

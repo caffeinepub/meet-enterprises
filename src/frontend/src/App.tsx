@@ -15,6 +15,7 @@ import { Footer } from "./components/Footer";
 import { GlobalParticles } from "./components/GlobalParticles";
 import { Navbar } from "./components/Navbar";
 import { SplashScreen } from "./components/SplashScreen";
+import { TshirtMascot } from "./components/TshirtMascot";
 import { CartProvider } from "./context/CartContext";
 import { AdminPage } from "./pages/AdminPage";
 import { AdminProductImagesPage } from "./pages/AdminProductImagesPage";
@@ -156,6 +157,7 @@ export default function App() {
     <CartProvider>
       <GlobalParticles />
       <RouterProvider router={router} />
+      <TshirtMascot heroMode={false} />
       <CursorOrb />
       <Toaster richColors position="top-center" />
     </CartProvider>
